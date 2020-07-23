@@ -15,12 +15,18 @@
 #include <rte_lcore.h>
 #include <rte_debug.h>
 
-static int
+#include <unistd.h>
+
+#include "helloworld_trace.h"
+
+int
 lcore_hello(__attribute__((unused)) void *arg)
 {
 	unsigned lcore_id;
 	lcore_id = rte_lcore_id();
 	printf("hello from core %u\n", lcore_id);
+	for(int i=0; i<1000000000; i++);
+	tracepoint(dpdk,test,lcore_id);
 	return 0;
 }
 
@@ -34,13 +40,16 @@ main(int argc, char **argv)
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 
-	/* call lcore_hello() on every slave lcore */
-	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
-		rte_eal_remote_launch(lcore_hello, NULL, lcore_id);
-	}
+	sleep(1);
 
+	/* call lcore_hello() on every slave lcore */
+	//RTE_LCORE_FOREACH_SLAVE(lcore_id) {
+	//	rte_eal_remote_launch(lcore_hello, NULL, lcore_id);
+	//}
+
+	rte_eal_mp_remote_launch(lcore_hello, NULL, CALL_MASTER);
 	/* call it on master lcore too */
-	lcore_hello(NULL);
+	//lcore_hello(NULL);
 
 	rte_eal_mp_wait_lcore();
 	return 0;

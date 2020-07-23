@@ -24,6 +24,7 @@
 #include <rte_tailq.h>
 
 #include "rte_lpm.h"
+#include "rte_lpm_trace.h"
 
 TAILQ_HEAD(rte_lpm_list, rte_tailq_entry);
 
@@ -315,6 +316,8 @@ rte_lpm_create_v1604(const char *name, int socket_id,
 
 	TAILQ_INSERT_TAIL(lpm_list, te, next);
 
+	tracepoint(librte_lpm, rte_lpm_create, lpm, lpm->name, lpm->max_rules, lpm->number_tbl8s);
+
 exit:
 	rte_mcfg_tailq_write_unlock();
 
@@ -380,6 +383,8 @@ rte_lpm_free_v1604(struct rte_lpm *lpm)
 		TAILQ_REMOVE(lpm_list, te, next);
 
 	rte_mcfg_tailq_write_unlock();
+
+	tracepoint(librte_lpm, rte_lpm_free, lpm);
 
 	rte_free(lpm->tbl8);
 	rte_free(lpm->rules_tbl);
@@ -1254,6 +1259,7 @@ rte_lpm_add_v1604(struct rte_lpm *lpm, uint32_t ip, uint8_t depth,
 		}
 	}
 
+	tracepoint(librte_lpm, rte_lpm_add, lpm, ip, depth, next_hop);
 	return 0;
 }
 BIND_DEFAULT_SYMBOL(rte_lpm_add, _v1604, 16.04);
@@ -1903,12 +1909,13 @@ rte_lpm_delete_v1604(struct rte_lpm *lpm, uint32_t ip, uint8_t depth)
 	int32_t rule_to_delete_index, sub_rule_index;
 	uint32_t ip_masked;
 	uint8_t sub_rule_depth;
+	int ret = -EINVAL;
 	/*
 	 * Check input arguments. Note: IP must be a positive integer of 32
 	 * bits in length therefore it need not be checked.
 	 */
 	if ((lpm == NULL) || (depth < 1) || (depth > RTE_LPM_MAX_DEPTH)) {
-		return -EINVAL;
+		goto exit;
 	}
 
 	ip_masked = ip & depth_to_mask(depth);
@@ -1924,7 +1931,7 @@ rte_lpm_delete_v1604(struct rte_lpm *lpm, uint32_t ip, uint8_t depth)
 	 * function rule_find returns -EINVAL.
 	 */
 	if (rule_to_delete_index < 0)
-		return -EINVAL;
+		goto exit;
 
 	/* Delete the rule from the rule table. */
 	rule_delete_v1604(lpm, rule_to_delete_index, depth);
@@ -1942,12 +1949,19 @@ rte_lpm_delete_v1604(struct rte_lpm *lpm, uint32_t ip, uint8_t depth)
 	 * delete_depth_small otherwise use delete_depth_big.
 	 */
 	if (depth <= MAX_DEPTH_TBL24) {
-		return delete_depth_small_v1604(lpm, ip_masked, depth,
+		ret = delete_depth_small_v1604(lpm, ip_masked, depth,
 				sub_rule_index, sub_rule_depth);
+		goto exit;
 	} else { /* If depth > MAX_DEPTH_TBL24 */
-		return delete_depth_big_v1604(lpm, ip_masked, depth, sub_rule_index,
+		ret = delete_depth_big_v1604(lpm, ip_masked, depth, sub_rule_index,
 				sub_rule_depth);
+		goto exit;
 	}
+
+exit:
+	tracepoint(librte_lpm, rte_lpm_delete, lpm, ip, depth ,ret);
+	return ret;
+
 }
 BIND_DEFAULT_SYMBOL(rte_lpm_delete, _v1604, 16.04);
 MAP_STATIC_SYMBOL(int rte_lpm_delete(struct rte_lpm *lpm, uint32_t ip,
@@ -1976,6 +1990,7 @@ VERSION_SYMBOL(rte_lpm_delete_all, _v20, 2.0);
 void
 rte_lpm_delete_all_v1604(struct rte_lpm *lpm)
 {
+
 	/* Zero rule information. */
 	memset(lpm->rule_info, 0, sizeof(lpm->rule_info));
 
@@ -1988,6 +2003,9 @@ rte_lpm_delete_all_v1604(struct rte_lpm *lpm)
 
 	/* Delete all rules form the rules table. */
 	memset(lpm->rules_tbl, 0, sizeof(lpm->rules_tbl[0]) * lpm->max_rules);
+
+	/* Trace this op */
+	tracepoint(librte_lpm, rte_lpm_delete_all, lpm);
 }
 BIND_DEFAULT_SYMBOL(rte_lpm_delete_all, _v1604, 16.04);
 MAP_STATIC_SYMBOL(void rte_lpm_delete_all(struct rte_lpm *lpm),

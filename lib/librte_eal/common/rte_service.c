@@ -21,6 +21,8 @@
 #include <rte_memory.h>
 #include <rte_malloc.h>
 
+#include "rte_eal_trace.h"
+
 #define RTE_SERVICE_NUM_MAX 64
 
 #define SERVICE_F_REGISTERED    (1 << 0)
@@ -259,6 +261,9 @@ rte_service_component_register(const struct rte_service_spec *spec,
 	if (id_ptr)
 		*id_ptr = free_slot;
 
+	tracepoint(librte_eal, service_component_register, free_slot,
+		spec->name, spec->callback, spec->callback_userdata);	
+
 	return 0;
 }
 
@@ -279,6 +284,8 @@ rte_service_component_unregister(uint32_t id)
 		lcore_states[i].service_mask &= ~(UINT64_C(1) << id);
 
 	memset(&rte_services[id], 0, sizeof(struct rte_service_spec_impl));
+
+	tracepoint(librte_eal, service_component_unregister, id, s->spec.name);
 
 	return 0;
 }
@@ -370,11 +377,16 @@ service_run(uint32_t i, int lcore, struct core_state *cs, uint64_t service_mask)
 		if (!rte_atomic32_cmpset((uint32_t *)&s->execute_lock, 0, 1))
 			return -EBUSY;
 
+    	tracepoint(librte_eal, service_run_begin, i, lcore);
+
 		rte_service_runner_do_callback(s, cs, i);
 		rte_atomic32_clear(&s->execute_lock);
-	} else
+	} else {
+		tracepoint(librte_eal, service_run_begin, i, lcore);
 		rte_service_runner_do_callback(s, cs, i);
+	}
 
+    tracepoint(librte_eal, service_run_end, i, lcore);
 	return 0;
 }
 
@@ -593,6 +605,9 @@ rte_service_map_lcore_set(uint32_t id, uint32_t lcore, uint32_t enabled)
 	struct rte_service_spec_impl *s;
 	SERVICE_VALID_GET_OR_ERR_RET(id, s, -EINVAL);
 	uint32_t on = enabled > 0;
+	
+	tracepoint(librte_eal, service_map_lcore, id, lcore, on);
+	
 	return service_update(&s->spec, lcore, &on, 0);
 }
 
@@ -620,6 +635,8 @@ set_lcore_state(uint32_t lcore, int32_t state)
 
 	/* update per-lcore optimized state tracking */
 	lcore_states[lcore].is_service_core = (state == ROLE_SERVICE);
+
+	tracepoint(librte_eal, lcore_role_change, lcore, state);
 }
 
 int32_t
@@ -698,6 +715,8 @@ rte_service_lcore_start(uint32_t lcore)
 	 */
 	lcore_states[lcore].runstate = RUNSTATE_RUNNING;
 
+	tracepoint(librte_eal, service_lcore_ready, lcore);
+
 	int ret = rte_eal_remote_launch(rte_service_runner_func, 0, lcore);
 	/* returns -EBUSY if the core is already launched, 0 on success */
 	return ret;
@@ -730,6 +749,8 @@ rte_service_lcore_stop(uint32_t lcore)
 
 	lcore_states[lcore].runstate = RUNSTATE_STOPPED;
 
+	tracepoint(librte_eal, service_lcore_stop, lcore);
+	
 	return 0;
 }
 

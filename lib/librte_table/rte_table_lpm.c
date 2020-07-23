@@ -15,6 +15,8 @@
 
 #include "rte_table_lpm.h"
 
+#include "rte_table_lpm_trace.h"
+
 #ifndef RTE_TABLE_LPM_MAX_NEXT_HOPS
 #define RTE_TABLE_LPM_MAX_NEXT_HOPS                        65536
 #endif
@@ -119,6 +121,8 @@ rte_table_lpm_create(void *params, int socket_id, uint32_t entry_size)
 	lpm->n_rules = p->n_rules;
 	lpm->offset = p->offset;
 
+	tracepoint(librte_table_lpm, rte_table_lpm_create, lpm, params, entry_size, lpm->lpm);
+
 	return lpm;
 }
 
@@ -132,6 +136,8 @@ rte_table_lpm_free(void *table)
 		RTE_LOG(ERR, TABLE, "%s: table parameter is NULL\n", __func__);
 		return -EINVAL;
 	}
+
+	tracepoint(librte_table_lpm, rte_table_lpm_free, table);
 
 	/* Free previously allocated resources */
 	rte_lpm_free(lpm->lpm);
@@ -238,6 +244,10 @@ rte_table_lpm_entry_add(
 
 	*key_found = nht_pos0_valid;
 	*entry_ptr = (void *) &lpm->nht[nht_pos * lpm->entry_size];
+
+	tracepoint(librte_table_lpm, rte_table_lpm_entry_add, lpm, ip_prefix, *key_found,
+		nht_pos, *entry_ptr);
+
 	return 0;
 }
 
@@ -296,6 +306,9 @@ rte_table_lpm_entry_delete(
 		memcpy(entry, &lpm->nht[nht_pos * lpm->entry_size],
 			lpm->entry_size);
 
+	tracepoint(librte_table_lpm, rte_table_lpm_entry_delete, table, ip_prefix,
+		&lpm->nht[nht_pos * lpm->entry_size], nht_pos);
+
 	return 0;
 }
 
@@ -336,7 +349,11 @@ rte_table_lpm_lookup(
 	}
 
 	*lookup_hit_mask = pkts_out_mask;
-	RTE_TABLE_LPM_STATS_PKTS_LOOKUP_MISS(lpm, n_pkts_in - __builtin_popcountll(pkts_out_mask));
+	uint32_t n_pkts_out = __builtin_popcountll(pkts_out_mask);
+	RTE_TABLE_LPM_STATS_PKTS_LOOKUP_MISS(lpm, n_pkts_in - n_pkts_out);
+
+	tracepoint(librte_table_lpm, rte_table_lpm_lookup, table, entries, pkts_out_mask, n_pkts_in, n_pkts_out);
+	
 	return 0;
 }
 

@@ -22,6 +22,7 @@
 #include "vhost.h"
 #include "vhost_user.h"
 
+#include "rte_vhost_trace.h"
 
 TAILQ_HEAD(vhost_user_connection_list, vhost_user_connection);
 
@@ -265,6 +266,9 @@ vhost_user_add_connection(int fd, struct vhost_user_socket *vsocket)
 	pthread_mutex_unlock(&vsocket->conn_mutex);
 
 	fdset_pipe_notify(&vhost_user.fdset);
+
+	tracepoint(librte_vhost, vhost_user_add_connection, vid, fd, vsocket->path);
+
 	return;
 
 err_cleanup:
@@ -934,6 +938,8 @@ rte_vhost_driver_register(const char *path, uint64_t flags)
 		goto out_mutex;
 	}
 
+	tracepoint(librte_vhost, rte_vhost_driver_register, path, flags, vsocket->is_server);
+
 	vhost_user.vsockets[vhost_user.vsocket_cnt++] = vsocket;
 
 	pthread_mutex_unlock(&vhost_user.mutex);
@@ -1042,6 +1048,8 @@ again:
 			vhost_user.vsockets[count] = NULL;
 			pthread_mutex_unlock(&vhost_user.mutex);
 
+			tracepoint(librte_vhost, rte_vhost_driver_unregister, path);
+
 			return 0;
 		}
 	}
@@ -1116,6 +1124,8 @@ rte_vhost_driver_start(const char *path)
 		}
 	}
 
+    tracepoint(librte_vhost, rte_vhost_driver_start, path, fdset_tid);
+	
 	if (vsocket->is_server)
 		return vhost_user_start_server(vsocket);
 	else

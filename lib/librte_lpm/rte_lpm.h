@@ -22,6 +22,9 @@
 #include <rte_vect.h>
 #include <rte_compat.h>
 
+
+#include "rte_lpm_trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -371,7 +374,12 @@ rte_lpm_lookup(struct rte_lpm *lpm, uint32_t ip, uint32_t *next_hop)
 	}
 
 	*next_hop = ((uint32_t)tbl_entry & 0x00FFFFFF);
-	return (tbl_entry & RTE_LPM_LOOKUP_SUCCESS) ? 0 : -ENOENT;
+	int ret = (tbl_entry & RTE_LPM_LOOKUP_SUCCESS) ? 0 : -ENOENT;
+	
+	tracepoint(librte_lpm, rte_lpm_lookup, lpm->name, ip, *next_hop, 
+						((uint32_t)tbl_entry & 0xFC000000) >> 26, ret);
+
+	return ret;
 }
 
 /**
@@ -430,6 +438,8 @@ rte_lpm_lookup_bulk_func(const struct rte_lpm *lpm, const uint32_t *ips,
 			next_hops[i] = *ptbl;
 		}
 	}
+
+	tracepoint(librte_lpm, rte_lpm_lookup_bulk, lpm->name, ips, next_hops, n);
 	return 0;
 }
 

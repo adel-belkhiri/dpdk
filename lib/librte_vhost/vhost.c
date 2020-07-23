@@ -25,6 +25,8 @@
 #include "vhost.h"
 #include "vhost_user.h"
 
+#include "rte_vhost_trace.h"
+
 struct virtio_net *vhost_devices[MAX_VHOST_DEVICE];
 
 /* Called with iotlb_lock read-locked */
@@ -454,6 +456,8 @@ alloc_vring_queue(struct virtio_net *dev, uint32_t vring_idx)
 
 	dev->nr_vring += 1;
 
+    tracepoint(librte_vhost, alloc_vring_queue, dev->vid, vring_idx, vq);
+	
 	return 0;
 }
 
@@ -541,6 +545,8 @@ vhost_destroy_device(int vid)
 
 	if (dev == NULL)
 		return;
+
+    tracepoint(librte_vhost, destroy_device, vid);
 
 	vhost_destroy_device_notify(dev);
 

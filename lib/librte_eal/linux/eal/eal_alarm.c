@@ -22,6 +22,8 @@
 #include <rte_spinlock.h>
 #include <eal_private.h>
 
+#include "rte_eal_trace.h"
+
 #ifndef	TFD_NONBLOCK
 #include <fcntl.h>
 #define	TFD_NONBLOCK	O_NONBLOCK
@@ -172,6 +174,8 @@ rte_eal_alarm_set(uint64_t us, rte_eal_alarm_callback cb_fn, void *cb_arg)
 	}
 	rte_spinlock_unlock(&alarm_list_lk);
 
+	tracepoint(librte_eal, alarm_set, us, cb_fn, cb_arg);
+
 	return ret;
 }
 
@@ -239,6 +243,8 @@ rte_eal_alarm_cancel(rte_eal_alarm_callback cb_fn, void *cb_arg)
 		rte_errno = ENOENT;
 	else if (err)
 		rte_errno = err;
+
+	tracepoint(librte_eal, alarm_cancel, cb_fn, cb_arg, count, rte_errno);
 
 	return count;
 }

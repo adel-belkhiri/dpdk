@@ -46,6 +46,8 @@
 #include "vhost.h"
 #include "vhost_user.h"
 
+#include "rte_vhost_trace.h"
+
 #define VIRTIO_MIN_MTU 68
 #define VIRTIO_MAX_MTU 65535
 
@@ -1131,19 +1133,23 @@ err_mmap:
 static bool
 vq_is_ready(struct virtio_net *dev, struct vhost_virtqueue *vq)
 {
-	bool rings_ok;
+	bool rings_ok, ret = false;
 
 	if (!vq)
-		return false;
+		goto finish;
 
 	if (vq_is_packed(dev))
 		rings_ok = !!vq->desc_packed;
 	else
 		rings_ok = vq->desc && vq->avail && vq->used;
 
-	return rings_ok &&
+	ret = rings_ok &&
 	       vq->kickfd != VIRTIO_UNINITIALIZED_EVENTFD &&
 	       vq->callfd != VIRTIO_UNINITIALIZED_EVENTFD;
+
+finish:
+//	tracepoint(librte_vhost, vq_ready, dev->vid, vq, vq->size, vq->callfd, vq->kickfd, ret);
+	return ret;
 }
 
 static int
@@ -1164,6 +1170,10 @@ virtio_is_ready(struct virtio_net *dev)
 
 	RTE_LOG(INFO, VHOST_CONFIG,
 		"virtio is now ready for processing.\n");
+
+	tracepoint(librte_vhost, virtio_is_ready, dev->vid, dev->ifname, dev->nr_vring,
+			dev->dequeue_zero_copy, dev->vhost_hlen, vq_is_packed(dev), dev->flags);
+
 	return 1;
 }
 
@@ -1358,6 +1368,9 @@ vhost_user_set_vring_enable(struct virtio_net **pdev,
 		drain_zmbuf_list(dev->virtqueue[index]);
 
 	dev->virtqueue[index]->enabled = enable;
+
+	tracepoint(librte_vhost, set_vring_enabled, dev->vid, index, dev->virtqueue[index], dev->virtqueue[index]->size,
+		dev->virtqueue[index]->kickfd, dev->virtqueue[index]->callfd);
 
 	return RTE_VHOST_MSG_RESULT_OK;
 }

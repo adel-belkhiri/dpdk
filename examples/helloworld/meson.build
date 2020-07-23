@@ -7,5 +7,15 @@
 # DPDK instance, use 'make'
 
 sources = files(
-	'main.c'
+	'main.c',
+	'helloworld_trace.c'
 )
+
+headers = files(
+	'helloworld_trace.h'
+)
+
+lttng_ust_dep = dependency('lttng-ust', required: false)
+if lttng_ust_dep.found()
+		ext_deps += lttng_ust_dep
+endif

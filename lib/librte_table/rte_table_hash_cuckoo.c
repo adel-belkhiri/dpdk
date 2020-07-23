@@ -12,6 +12,8 @@
 
 #include "rte_table_hash_cuckoo.h"
 
+#include "rte_table_hash_trace.h"
+
 #ifdef RTE_TABLE_STATS_COLLECT
 
 #define RTE_TABLE_HASH_CUCKOO_STATS_PKTS_IN_ADD(table, val) \
@@ -136,6 +138,10 @@ rte_table_hash_cuckoo_create(void *params,
 	RTE_LOG(INFO, TABLE,
 		"%s: Cuckoo hash table %s memory footprint is %u bytes\n",
 		__func__, p->name, total_size);
+
+	tracepoint(librte_table_hash, rte_table_hash_cuckoo_create,
+		h_table, p->name, p->n_keys, p->key_size, entry_size, p->f_hash, p->seed, p->key_offset);
+
 	return t;
 }
 
@@ -145,6 +151,8 @@ rte_table_hash_cuckoo_free(void *table) {
 
 	if (table == NULL)
 		return -EINVAL;
+
+	tracepoint(librte_table_hash, rte_table_hash_cuckoo_free, t->h_table);
 
 	rte_hash_free(t->h_table);
 	rte_free(t);
@@ -177,7 +185,7 @@ rte_table_hash_cuckoo_entry_add(void *table, void *key, void *entry,
 		memcpy(existing_entry, entry, t->entry_size);
 		*entry_ptr = existing_entry;
 
-		return 0;
+		goto success;
 	}
 
 	if (pos == -ENOENT) {
@@ -193,10 +201,16 @@ rte_table_hash_cuckoo_entry_add(void *table, void *key, void *entry,
 
 		*key_found = 0;
 		*entry_ptr = new_entry;
-		return 0;
+		goto success;
 	}
 
 	return pos;
+
+success:
+	tracepoint(librte_table_hash, rte_table_hash_cuckoo_entry_add, table, key,
+		entry, key_found, entry_ptr);
+
+	return 0;
 }
 
 static int
@@ -221,10 +235,14 @@ rte_table_hash_cuckoo_entry_delete(void *table, void *key,
 			memcpy(entry, entry_ptr, t->entry_size);
 
 		memset(&t->memory[pos * t->entry_size], 0, t->entry_size);
+
+		tracepoint(librte_table_hash, rte_table_hash_cuckoo_entry_delete, table, key);
+
 		return 0;
 	}
 
 	*key_found = 0;
+
 	return pos;
 }
 
@@ -289,8 +307,11 @@ rte_table_hash_cuckoo_lookup(void *table,
 		}
 
 	*lookup_hit_mask = pkts_mask_out;
+	uint32_t n_pkts_out = __builtin_popcountll(pkts_mask_out);
 	RTE_TABLE_HASH_CUCKOO_STATS_PKTS_LOOKUP_MISS(t,
-			n_pkts_in - __builtin_popcountll(pkts_mask_out));
+			n_pkts_in - n_pkts_out);
+
+	tracepoint(librte_table_hash, rte_table_hash_cuckoo_lookup, table, n_pkts_in, n_pkts_out);
 
 	return 0;
 

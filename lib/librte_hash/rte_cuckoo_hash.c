@@ -32,6 +32,8 @@
 #include "rte_hash.h"
 #include "rte_cuckoo_hash.h"
 
+#include "rte_hash_trace.h"
+
 #define FOR_EACH_BUCKET(CURRENT_BKT, START_BUCKET)                            \
 	for (CURRENT_BKT = START_BUCKET;                                      \
 		CURRENT_BKT != NULL;                                          \
@@ -440,6 +442,9 @@ rte_hash_create(const struct rte_hash_parameters *params)
 	TAILQ_INSERT_TAIL(hash_list, te, next);
 	rte_mcfg_tailq_write_unlock();
 
+	tracepoint(librte_hash, rte_hash_create, h->name, h->entries, h->key_len, h->hash_func,
+		h->hash_func_init_val, params->extra_flag);
+
 	return h;
 err_unlock:
 	rte_mcfg_tailq_write_unlock();
@@ -479,6 +484,8 @@ rte_hash_free(struct rte_hash *h)
 		rte_mcfg_tailq_write_unlock();
 		return;
 	}
+
+	tracepoint(librte_hash, rte_hash_free, h->name);
 
 	TAILQ_REMOVE(hash_list, te, next);
 
@@ -1110,14 +1117,21 @@ rte_hash_add_key_with_hash(const struct rte_hash *h,
 			const void *key, hash_sig_t sig)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_add_key_with_hash(h, key, sig, 0);
+	int32_t ret = __rte_hash_add_key_with_hash(h, key, sig, 0);
+	
+	tracepoint(librte_hash, rte_hash_add_key, h->name, key, sig, ret);
+	return ret;
 }
 
 int32_t
 rte_hash_add_key(const struct rte_hash *h, const void *key)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_add_key_with_hash(h, key, rte_hash_hash(h, key), 0);
+	hash_sig_t sig = rte_hash_hash(h, key);
+	int32_t ret = __rte_hash_add_key_with_hash(h, key, sig, 0);
+
+	tracepoint(librte_hash, rte_hash_add_key, h->name, key, sig, ret);
+	return ret;
 }
 
 int
@@ -1128,10 +1142,10 @@ rte_hash_add_key_with_hash_data(const struct rte_hash *h,
 
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
 	ret = __rte_hash_add_key_with_hash(h, key, sig, data);
-	if (ret >= 0)
-		return 0;
-	else
-		return ret;
+	if (ret >= 0) ret = 0;
+
+	tracepoint(librte_hash, rte_hash_add_key_with_data, h->name, key, sig, data, ret);
+ 	return ret;
 }
 
 int
@@ -1140,12 +1154,12 @@ rte_hash_add_key_data(const struct rte_hash *h, const void *key, void *data)
 	int ret;
 
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-
-	ret = __rte_hash_add_key_with_hash(h, key, rte_hash_hash(h, key), data);
-	if (ret >= 0)
-		return 0;
-	else
-		return ret;
+	hash_sig_t sig = rte_hash_hash(h, key);
+	ret = __rte_hash_add_key_with_hash(h, key, sig, data);
+	if (ret >= 0)  ret = 0;
+	
+	tracepoint(librte_hash, rte_hash_add_key_with_data, h->name, key, sig, data, ret);
+	return ret;
 }
 
 /* Search one bucket to find the match key - uses rw lock */
@@ -1336,14 +1350,21 @@ rte_hash_lookup_with_hash(const struct rte_hash *h,
 			const void *key, hash_sig_t sig)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_lookup_with_hash(h, key, sig, NULL);
+	int32_t ret = __rte_hash_lookup_with_hash(h, key, sig, NULL);
+
+	tracepoint(librte_hash, rte_hash_lookup_key, h->name, key, sig, ret);
+	return ret;
 }
 
 int32_t
 rte_hash_lookup(const struct rte_hash *h, const void *key)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_lookup_with_hash(h, key, rte_hash_hash(h, key), NULL);
+	hash_sig_t sig = rte_hash_hash(h, key);
+	int32_t ret = __rte_hash_lookup_with_hash(h, key, rte_hash_hash(h, key), NULL);
+
+	tracepoint(librte_hash, rte_hash_lookup_key, h->name, key, sig, ret);
+	return ret;
 }
 
 int
@@ -1351,14 +1372,21 @@ rte_hash_lookup_with_hash_data(const struct rte_hash *h,
 			const void *key, hash_sig_t sig, void **data)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_lookup_with_hash(h, key, sig, data);
+	int ret = __rte_hash_lookup_with_hash(h, key, sig, data);
+
+	tracepoint(librte_hash, rte_hash_lookup_key_with_data, h->name, key, sig, data, ret);
+	return ret;
 }
 
 int
 rte_hash_lookup_data(const struct rte_hash *h, const void *key, void **data)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_lookup_with_hash(h, key, rte_hash_hash(h, key), data);
+	hash_sig_t sig = rte_hash_hash(h, key);
+	int ret = __rte_hash_lookup_with_hash(h, key, sig, data);
+
+	tracepoint(librte_hash, rte_hash_lookup_key_with_data, h->name, key, sig, data, ret);
+	return ret;
 }
 
 static inline void
@@ -1562,14 +1590,21 @@ rte_hash_del_key_with_hash(const struct rte_hash *h,
 			const void *key, hash_sig_t sig)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_del_key_with_hash(h, key, sig);
+	int32_t ret = __rte_hash_del_key_with_hash(h, key, sig);
+
+	tracepoint(librte_hash, rte_hash_del_key, h->name, key, sig, ret);
+	return ret;
 }
 
 int32_t
 rte_hash_del_key(const struct rte_hash *h, const void *key)
 {
 	RETURN_IF_TRUE(((h == NULL) || (key == NULL)), -EINVAL);
-	return __rte_hash_del_key_with_hash(h, key, rte_hash_hash(h, key));
+	hash_sig_t sig = rte_hash_hash(h, key);
+	int32_t ret = __rte_hash_del_key_with_hash(h, key, sig);
+
+	tracepoint(librte_hash, rte_hash_del_key, h->name, key, sig, ret);
+	return ret;
 }
 
 int
@@ -1858,7 +1893,7 @@ next_key:
 		if (hit_mask != NULL)
 			*hit_mask = hits;
 		__hash_rw_reader_unlock(h);
-		return;
+		goto finish;
 	}
 
 	/* need to check ext buckets for match */
@@ -1885,6 +1920,9 @@ next_key:
 
 	if (hit_mask != NULL)
 		*hit_mask = hits;
+finish:
+	tracepoint(librte_hash, rte_hash_lookup_bulk, h->name, keys, num_keys, prim_hash, 
+		positions, hits);
 }
 
 static inline void
@@ -2064,7 +2102,7 @@ next_key:
 		if (hits == ((1ULL << num_keys) - 1)) {
 			if (hit_mask != NULL)
 				*hit_mask = hits;
-			return;
+			goto finish;
 		}
 		/* need to check ext buckets for match */
 		if (h->ext_table_support) {
@@ -2107,6 +2145,9 @@ next_key:
 
 	if (hit_mask != NULL)
 		*hit_mask = hits;
+
+finish:
+	tracepoint(librte_hash, rte_hash_lookup_bulk, h->name, keys, num_keys, prim_hash, positions, hits);
 }
 
 static inline void

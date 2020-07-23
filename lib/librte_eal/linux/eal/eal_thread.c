@@ -24,6 +24,8 @@
 #include "eal_private.h"
 #include "eal_thread.h"
 
+#include "rte_eal_trace.h"
+
 RTE_DEFINE_PER_LCORE(unsigned, _lcore_id) = LCORE_ID_ANY;
 RTE_DEFINE_PER_LCORE(unsigned, _socket_id) = (unsigned)SOCKET_ID_ANY;
 RTE_DEFINE_PER_LCORE(rte_cpuset_t, _cpuset);
@@ -40,9 +42,10 @@ rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned slave_id)
 	char c = 0;
 	int m2s = lcore_config[slave_id].pipe_master2slave[1];
 	int s2m = lcore_config[slave_id].pipe_slave2master[0];
+	int rc = -EBUSY;
 
 	if (lcore_config[slave_id].state != WAIT)
-		return -EBUSY;
+		goto finish;
 
 	lcore_config[slave_id].f = f;
 	lcore_config[slave_id].arg = arg;
@@ -54,6 +57,9 @@ rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned slave_id)
 	if (n < 0)
 		rte_panic("cannot write on configuration pipe\n");
 
+	/* Fire the event before waiting for the ack to garantee events ordering (with thread_lcore_running) */
+	tracepoint(librte_eal, thread_remote_launch, f, arg, slave_id, /*rc == success*/ 0);
+
 	/* wait ack */
 	do {
 		n = read(s2m, &c, 1);
@@ -63,6 +69,10 @@ rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned slave_id)
 		rte_panic("cannot read on configuration pipe\n");
 
 	return 0;
+
+finish:	
+	tracepoint(librte_eal, thread_remote_launch, f, arg, slave_id, rc);
+	return rc;
 }
 
 /* set affinity for current EAL thread */
@@ -124,6 +134,8 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 	RTE_LOG(DEBUG, EAL, "lcore %u is ready (tid=%zx;cpuset=[%s%s])\n",
 		lcore_id, (uintptr_t)thread_id, cpuset, ret == 0 ? "" : "...");
 
+	tracepoint(librte_eal, thread_lcore_ready, lcore_id, /*slave lcore*/ 0, cpuset);				
+
 	/* read on our pipe to get commands */
 	while (1) {
 		void *fct_arg;
@@ -148,6 +160,8 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 		if (lcore_config[lcore_id].f == NULL)
 			rte_panic("NULL function pointer\n");
 
+		tracepoint(librte_eal, thread_lcore_running, lcore_id, lcore_config[lcore_id].f, lcore_config[lcore_id].arg);			
+
 		/* call the function and store the return value */
 		fct_arg = lcore_config[lcore_id].arg;
 		ret = lcore_config[lcore_id].f(fct_arg);
@@ -161,6 +175,8 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 			lcore_config[lcore_id].state = WAIT;
 		else
 			lcore_config[lcore_id].state = FINISHED;
+		
+		tracepoint(librte_eal, thread_lcore_waiting, lcore_id, ret, lcore_config[lcore_id].state);
 	}
 
 	/* never reached */

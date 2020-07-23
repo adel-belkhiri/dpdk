@@ -46,6 +46,7 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_DISTRIBUTOR)    += -lrte_distributor
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IP_FRAG)        += -lrte_ip_frag
 _LDLIBS-$(CONFIG_RTE_LIBRTE_METER)          += -lrte_meter
 _LDLIBS-$(CONFIG_RTE_LIBRTE_LPM)            += -lrte_lpm
+_LDLIBS-$(CONFIG_RTE_LIBRTE_TRACE)          += -lrte_trace
 _LDLIBS-$(CONFIG_RTE_LIBRTE_ACL)            += -lrte_acl
 _LDLIBS-$(CONFIG_RTE_LIBRTE_TELEMETRY)      += --no-as-needed
 _LDLIBS-$(CONFIG_RTE_LIBRTE_TELEMETRY)      += --whole-archive

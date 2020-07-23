@@ -44,6 +44,9 @@
 #include "ethdev_profile.h"
 #include "ethdev_private.h"
 
+#define TRACEPOINT_DEFINE
+#include "rte_ethdev_trace.h"
+
 int rte_eth_dev_logtype;
 
 static const char *MZ_RTE_ETH_DEV_DATA = "rte_eth_dev_data";
@@ -907,6 +910,8 @@ rte_eth_dev_rx_queue_start(uint16_t port_id, uint16_t rx_queue_id)
 		return 0;
 	}
 
+	tracepoint(librte_ethdev, rte_eth_dev_rx_queue_start, port_id, rx_queue_id);
+
 	return eth_err(port_id, dev->dev_ops->rx_queue_start(dev,
 							     rx_queue_id));
 
@@ -933,6 +938,8 @@ rte_eth_dev_rx_queue_stop(uint16_t port_id, uint16_t rx_queue_id)
 			rx_queue_id, port_id);
 		return 0;
 	}
+
+	tracepoint(librte_ethdev, rte_eth_dev_rx_queue_stop, port_id, rx_queue_id);
 
 	return eth_err(port_id, dev->dev_ops->rx_queue_stop(dev, rx_queue_id));
 
@@ -967,6 +974,8 @@ rte_eth_dev_tx_queue_start(uint16_t port_id, uint16_t tx_queue_id)
 		return 0;
 	}
 
+	tracepoint(librte_ethdev, rte_eth_dev_tx_queue_start, port_id, tx_queue_id);
+
 	return eth_err(port_id, dev->dev_ops->tx_queue_start(dev, tx_queue_id));
 }
 
@@ -991,6 +1000,8 @@ rte_eth_dev_tx_queue_stop(uint16_t port_id, uint16_t tx_queue_id)
 			tx_queue_id, port_id);
 		return 0;
 	}
+
+	tracepoint(librte_ethdev, rte_eth_dev_tx_queue_stop, port_id, tx_queue_id);
 
 	return eth_err(port_id, dev->dev_ops->tx_queue_stop(dev, tx_queue_id));
 
@@ -1691,6 +1702,8 @@ rte_eth_rx_queue_setup(uint16_t port_id, uint16_t rx_queue_id,
 			dev->data->min_rx_buf_size = mbp_buf_size;
 	}
 
+	tracepoint(librte_ethdev, rte_eth_rx_queue_setup, port_id, rx_queue_id, nb_rx_desc, socket_id);
+
 	return eth_err(port_id, ret);
 }
 
@@ -1786,6 +1799,8 @@ rte_eth_tx_queue_setup(uint16_t port_id, uint16_t tx_queue_id,
 			__func__);
 		return -EINVAL;
 	}
+
+	tracepoint(librte_ethdev, rte_eth_tx_queue_setup, port_id, tx_queue_id, nb_tx_desc, socket_id);
 
 	return eth_err(port_id, (*dev->dev_ops->tx_queue_setup)(dev,
 		       tx_queue_id, nb_tx_desc, socket_id, &local_conf));
@@ -3720,6 +3735,8 @@ rte_eth_dev_create(struct rte_device *device, const char *name,
 
 	rte_eth_dev_probing_finish(ethdev);
 
+	tracepoint(librte_ethdev, rte_eth_dev_create, ethdev->data->port_id, name);
+
 	return retval;
 
 probe_failed:
@@ -3743,6 +3760,8 @@ rte_eth_dev_destroy(struct rte_eth_dev *ethdev,
 	if (ret)
 		return ret;
 
+	tracepoint(librte_ethdev, rte_eth_dev_destroy, ethdev->data->name);
+	
 	return rte_eth_dev_release_port(ethdev);
 }
 

@@ -6,6 +6,8 @@
 #include "tb_mem.h"
 #include "acl.h"
 
+#include "rte_acl_trace.h"
+
 #define	ACL_POOL_ALIGN		8
 #define	ACL_POOL_ALLOC_MIN	0x800000
 
@@ -1560,6 +1562,9 @@ rte_acl_build(struct rte_acl_ctx *ctx, const struct rte_acl_config *cfg)
 		}
 
 		acl_build_log(&bcx);
+
+		tracepoint (librte_acl, rte_acl_build, ctx, cfg, bcx.node_max,
+			bcx.num_nodes, bcx.num_tries, bcx.pool.alloc);
 
 		/* cleanup after build. */
 		tb_free_pool(&bcx.pool);

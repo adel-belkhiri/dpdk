@@ -25,8 +25,8 @@
  */
 #include <rte_service_component.h>
 
-#define PROFILE_CORES_MAX 5
-#define PROFILE_SERVICE_PER_CORE 5
+#define PROFILE_CORES_MAX 2
+#define PROFILE_SERVICE_PER_CORE 3
 
 /* dummy function to do "work" */
 static int32_t service_func(void *args)
@@ -36,12 +36,20 @@ static int32_t service_func(void *args)
 	return 0;
 }
 
+/* dummy function to do "work" */
+static int32_t service_func_2(void *args)
+{
+	RTE_SET_USED(args);
+	rte_delay_us(2000000);
+	return 0;
+}
+
 static struct rte_service_spec services[] = {
 	{"service_1", service_func, NULL, 0, 0},
 	{"service_2", service_func, NULL, 0, 0},
-	{"service_3", service_func, NULL, 0, 0},
-	{"service_4", service_func, NULL, 0, 0},
-	{"service_5", service_func, NULL, 0, 0},
+	{"service_3", service_func_2, NULL, 0, 0},
+	/*{"service_4", service_func, NULL, 0, 0},
+	{"service_5", service_func, NULL, 0, 0},*/
 };
 #define NUM_SERVICES RTE_DIM(services)
 
@@ -69,32 +77,32 @@ static struct profile profiles[] = {
 	/* profile 0: high performance */
 	{
 		.name = "High Performance",
-		.num_cores = 5,
+		.num_cores = 2,
 		.cores[0] = {.mapped_services = {1, 0, 0, 0, 0} },
 		.cores[1] = {.mapped_services = {0, 1, 0, 0, 0} },
-		.cores[2] = {.mapped_services = {0, 0, 1, 0, 0} },
+		/*.cores[2] = {.mapped_services = {0, 0, 1, 0, 0} },
 		.cores[3] = {.mapped_services = {0, 0, 0, 1, 0} },
-		.cores[4] = {.mapped_services = {0, 0, 0, 0, 1} },
+		.cores[4] = {.mapped_services = {0, 0, 0, 0, 1} },*/
 	},
 	/* profile 1: mid performance with single service priority */
 	{
 		.name = "Mid-High Performance",
-		.num_cores = 3,
+		.num_cores = 2,
 		.cores[0] = {.mapped_services = {1, 1, 0, 0, 0} },
 		.cores[1] = {.mapped_services = {0, 0, 1, 1, 0} },
-		.cores[2] = {.mapped_services = {0, 0, 0, 0, 1} },
+		/*.cores[2] = {.mapped_services = {0, 0, 0, 0, 1} },
 		.cores[3] = {.mapped_services = {0, 0, 0, 0, 0} },
-		.cores[4] = {.mapped_services = {0, 0, 0, 0, 0} },
+		.cores[4] = {.mapped_services = {0, 0, 0, 0, 0} },*/
 	},
 	/* profile 2: mid performance with single service priority */
 	{
 		.name = "Mid-Low Performance",
 		.num_cores = 2,
-		.cores[0] = {.mapped_services = {1, 1, 1, 0, 0} },
-		.cores[1] = {.mapped_services = {1, 1, 0, 1, 1} },
-		.cores[2] = {.mapped_services = {0, 0, 0, 0, 0} },
+		.cores[0] = {.mapped_services = {1, 1, 0} },
+		.cores[1] = {.mapped_services = {0, 0, 1} },
+		/*.cores[2] = {.mapped_services = {0, 0, 0, 0, 0} },
 		.cores[3] = {.mapped_services = {0, 0, 0, 0, 0} },
-		.cores[4] = {.mapped_services = {0, 0, 0, 0, 0} },
+		.cores[4] = {.mapped_services = {0, 0, 0, 0, 0} },*/
 	},
 	/* profile 3: scale down performance on single core */
 	{
@@ -102,9 +110,9 @@ static struct profile profiles[] = {
 		.num_cores = 1,
 		.cores[0] = {.mapped_services = {1, 1, 1, 1, 1} },
 		.cores[1] = {.mapped_services = {0, 0, 0, 0, 0} },
-		.cores[2] = {.mapped_services = {0, 0, 0, 0, 0} },
+		/*.cores[2] = {.mapped_services = {0, 0, 0, 0, 0} },
 		.cores[3] = {.mapped_services = {0, 0, 0, 0, 0} },
-		.cores[4] = {.mapped_services = {0, 0, 0, 0, 0} },
+		.cores[4] = {.mapped_services = {0, 0, 0, 0, 0} },*/
 	},
 };
 #define NUM_PROFILES RTE_DIM(profiles)
@@ -201,13 +209,13 @@ main(int argc, char **argv)
 	}
 
 	i = 0;
-	while (1) {
+	//while (1) {
 		const char clr[] = { 27, '[', '2', 'J', '\0' };
 		const char topLeft[] = { 27, '[', '1', ';', '1', 'H', '\0' };
 		printf("%s%s", clr, topLeft);
 
 		apply_profile(2);
-		printf("\n==> Profile: %s\n\n", profiles[2].name);
+		printf("\n==> Profile: %s\n\n", profiles[i].name);
 
 		sleep(1);
 		rte_service_dump(stdout, UINT32_MAX);
@@ -216,31 +224,9 @@ main(int argc, char **argv)
 		rte_service_dump(stdout, UINT32_MAX);
 
 		i++;
-		
-		const uint8_t core_off = 1;
-		for ( int j ; j < PROFILE_CORES_MAX; j++) {
-		uint32_t core = j + core_off;
-		for (int s = 0; s < NUM_SERVICES; s++) {
-			ret = rte_service_map_lcore_set(s, core, 0);
-			if (ret && ret != -EINVAL) {
-				printf("%s %d: map lcore set = %d\n", __func__,
-						__LINE__, ret);
-			}
-		}
-		ret = rte_service_lcore_stop(core);
-		if (ret && ret != -EALREADY) {
-			printf("%s %d: lcore stop = %d\n", __func__,
-					__LINE__, ret);
-		}
-		ret = rte_service_lcore_del(core);
-		if (ret && ret != -EINVAL) {
-			printf("%s %d: lcore del = %d\n", __func__,
-					__LINE__, ret);
-		}
-	}
-		//if (i >= NUM_PROFILES)
-			break;
-	}
+		if (i >= NUM_PROFILES)
+			i = 0;
+	//}
 
 	return 0;
 }

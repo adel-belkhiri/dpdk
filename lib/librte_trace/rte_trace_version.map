@@ -1,0 +1,9 @@
+DPDK_2.0 {
+	global: *;
+};
+
+DPDK_16.04 {
+	global: *;
+
+} DPDK_2.0;
+

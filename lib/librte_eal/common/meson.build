@@ -108,3 +108,5 @@ install_headers(generic_headers, subdir: 'generic')
 
 # get and install the architecture specific headers
 subdir(join_paths('include/arch', arch_subdir))
+
+deps += ['trace']

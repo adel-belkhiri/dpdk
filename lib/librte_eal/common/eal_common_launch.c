@@ -15,6 +15,7 @@
 #include <rte_per_lcore.h>
 #include <rte_lcore.h>
 
+#include "rte_eal_trace.h"
 /*
  * Wait until a lcore finished its job.
  */
@@ -59,8 +60,12 @@ rte_eal_mp_remote_launch(int (*f)(void *), void *arg,
 	}
 
 	if (call_master == CALL_MASTER) {
+		tracepoint(librte_eal, thread_lcore_running, master /*lcore_id*/, f, arg);
+
 		lcore_config[master].ret = f(arg);
 		lcore_config[master].state = FINISHED;
+
+		tracepoint(librte_eal, thread_lcore_waiting, master, lcore_config[master].ret, FINISHED);
 	}
 
 	return 0;

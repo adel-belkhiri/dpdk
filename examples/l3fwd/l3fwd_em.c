@@ -99,10 +99,10 @@ struct ipv6_l3fwd_em_route {
 };
 
 static struct ipv4_l3fwd_em_route ipv4_l3fwd_em_route_array[] = {
-	{{RTE_IPV4(101, 0, 0, 0), RTE_IPV4(100, 10, 0, 1),  101, 11, IPPROTO_TCP}, 0},
-	{{RTE_IPV4(201, 0, 0, 0), RTE_IPV4(200, 20, 0, 1),  102, 12, IPPROTO_TCP}, 1},
-	{{RTE_IPV4(111, 0, 0, 0), RTE_IPV4(100, 30, 0, 1),  101, 11, IPPROTO_TCP}, 2},
-	{{RTE_IPV4(211, 0, 0, 0), RTE_IPV4(200, 40, 0, 1),  102, 12, IPPROTO_TCP}, 3},
+	{{RTE_IPV4(101, 0, 0, 1), RTE_IPV4(100, 10, 0, 1),  101, 11, IPPROTO_UDP}, 0},
+	{{RTE_IPV4(201, 0, 0, 0), RTE_IPV4(200, 20, 0, 1),  102, 12, IPPROTO_UDP}, 1},
+	{{RTE_IPV4(111, 0, 0, 0), RTE_IPV4(100, 30, 0, 1),  101, 11, IPPROTO_UDP}, 2},
+	{{RTE_IPV4(211, 0, 0, 0), RTE_IPV4(200, 40, 0, 1),  102, 12, IPPROTO_UDP}, 3},
 };
 
 static struct ipv6_l3fwd_em_route ipv6_l3fwd_em_route_array[] = {

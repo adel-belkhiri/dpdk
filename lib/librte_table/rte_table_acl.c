@@ -14,6 +14,8 @@
 #include "rte_table_acl.h"
 #include <rte_ether.h>
 
+#include <rte_table_acl_trace.h>
+
 #ifdef RTE_TABLE_STATS_COLLECT
 
 #define RTE_TABLE_ACL_STATS_PKTS_IN_ADD(table, val) \
@@ -133,6 +135,9 @@ rte_table_acl_create(
 	acl->n_rules = p->n_rules;
 	acl->entry_size = entry_size;
 
+	tracepoint(librte_table_acl, rte_table_acl_create, acl, p->name, acl->name_id,
+		&(acl->acl_params), &(acl->cfg), acl->entry_size);
+
 	return acl;
 }
 
@@ -150,6 +155,8 @@ rte_table_acl_free(void *table)
 	/* Free previously allocated resources */
 	if (acl->ctx != NULL)
 		rte_acl_free(acl->ctx);
+
+	tracepoint(librte_table_acl, rte_table_acl_free, acl);
 
 	rte_free(acl);
 
@@ -289,7 +296,7 @@ rte_table_acl_entry_add(
 			*entry_ptr = &acl->memory[i * acl->entry_size];
 			memcpy(*entry_ptr, entry, acl->entry_size);
 
-			return 0;
+			goto finish;
 		}
 	}
 
@@ -326,6 +333,10 @@ rte_table_acl_entry_add(
 	*key_found = 0;
 	*entry_ptr = &acl->memory[free_pos * acl->entry_size];
 	memcpy(*entry_ptr, entry, acl->entry_size);
+
+finish:
+	tracepoint(librte_table_acl, rte_table_acl_entry_add, table, acl->name_id,
+		acl->cfg.num_fields, rule, free_pos, *entry_ptr, *key_found, acl->ctx);
 
 	return 0;
 }
@@ -408,6 +419,9 @@ rte_table_acl_entry_delete(
 	if (entry != NULL)
 		memcpy(entry, &acl->memory[pos * acl->entry_size],
 			acl->entry_size);
+
+	tracepoint(librte_table_acl, rte_table_acl_entry_delete, table, acl->name_id, pos,
+		&acl->memory[pos * acl->entry_size], acl->ctx);
 
 	return 0;
 }
@@ -590,6 +604,9 @@ rte_table_acl_entry_add_bulk(
 		memcpy(entries_ptr[i], entries[i], acl->entry_size);
 	}
 
+	trace_acl_entry_add_bulk(table, acl->name_id, acl->cfg.num_fields, n_keys,
+		keys, key_found, entries_ptr, rule_pos, acl->ctx);
+
 	return 0;
 }
 
@@ -710,6 +727,9 @@ rte_table_acl_entry_delete_bulk(
 					acl->entry_size);
 	}
 
+	tracepoint(librte_table_acl, rte_table_acl_entry_delete_bulk, acl, acl->name_id, n_keys,
+		rule_pos, entries, acl->ctx);
+
 	return 0;
 }
 
@@ -767,7 +787,11 @@ rte_table_acl_lookup(
 	}
 
 	*lookup_hit_mask = pkts_out_mask;
-	RTE_TABLE_ACL_STATS_PKTS_LOOKUP_MISS(acl, n_pkts_in - __builtin_popcountll(pkts_out_mask));
+	__rte_unused uint32_t n_pkts_out = __builtin_popcountll(pkts_out_mask);
+	RTE_TABLE_ACL_STATS_PKTS_LOOKUP_MISS(acl, n_pkts_in - n_pkts_out);
+
+	tracepoint(librte_table_acl, rte_table_acl_lookup, acl, entries,
+		results, n_pkts_in, n_pkts_out);
 
 	return 0;
 }

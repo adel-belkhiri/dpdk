@@ -10,6 +10,8 @@
 #include <rte_table_acl.h>
 #include <stdbool.h>
 
+#include <rte_flow_classify_trace.h>
+
 int librte_flow_classify_logtype;
 
 static uint32_t unique_id = 1;
@@ -290,6 +292,7 @@ rte_flow_classifier_create(struct rte_flow_classifier_params *params)
 
 	cls->socket_id = params->socket_id;
 
+	tracepoint(librte_flow_classify, rte_flow_classifier_create, cls->name, cls->socket_id);
 	return cls;
 }
 
@@ -320,6 +323,8 @@ rte_flow_classifier_free(struct rte_flow_classifier *cls)
 		rte_flow_classify_table_free(table);
 	}
 
+	tracepoint(librte_flow_classify, rte_flow_classifier_free, cls->name);
+	
 	/* Free flow classifier memory */
 	rte_free(cls);
 
@@ -410,6 +415,7 @@ rte_flow_classify_table_create(struct rte_flow_classifier *cls,
 	table->entry_size = entry_size;
 	table->h_table = h_table;
 
+	tracepoint(librte_flow_classify, rte_flow_classify_table_create, cls->name, h_table, params);
 	return 0;
 }
 
@@ -557,6 +563,8 @@ rte_flow_classify_table_entry_add(struct rte_flow_classifier *cls,
 			*key_found = rule->key_found;
 			}
 
+			tracepoint(librte_flow_classify, rte_flow_classify_table_entry_add, cls->name, table->h_table,
+					rule->id, rule->entry_ptr, rule->rules.type, rule->key_found, &rule->rules.u.ipv4_5tuple);
 			return rule;
 		}
 	}
@@ -585,6 +593,8 @@ rte_flow_classify_table_entry_delete(struct rte_flow_classifier *cls,
 						&rule->key_found,
 						&rule->entry);
 
+				tracepoint(librte_flow_classify, rte_flow_classify_table_entry_delete,
+						cls->name, table->h_table, rule->id);
 				return ret;
 			}
 		}
@@ -612,6 +622,9 @@ flow_classifier_lookup(struct rte_flow_classifier *cls,
 		cls->nb_pkts = nb_pkts;
 	else
 		cls->nb_pkts = 0;
+
+	tracepoint(librte_flow_classify, flow_classifier_lookup, cls->name, table->h_table,
+		nb_pkts, __builtin_popcountll(lookup_hit_mask), (void **)cls->entries);
 
 	return ret;
 }

@@ -10,6 +10,7 @@
 # core libs which are widely reused, so their deps are kept to a minimum.
 libraries = [
 	'kvargs', # eal depends on kvargs
+	'trace', # tracing library
 	'eal', # everything depends on eal
 	'ring', 'mempool', 'mbuf', 'net', 'meter', 'ethdev', 'pci', # core
 	'cmdline',

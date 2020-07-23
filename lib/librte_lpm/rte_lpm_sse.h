@@ -10,6 +10,8 @@
 #include <rte_common.h>
 #include <rte_vect.h>
 
+#include "rte_lpm_trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,7 +78,8 @@ rte_lpm_lookupx4(const struct rte_lpm *lpm, xmm_t ip, uint32_t hop[4],
 			likely((pt2 & mask_xv) == mask_v)) {
 		*(uint64_t *)hop = pt & RTE_LPM_MASKX4_RES;
 		*(uint64_t *)(hop + 2) = pt2 & RTE_LPM_MASKX4_RES;
-		return;
+		
+		goto finish;
 	}
 
 	if (unlikely((pt & RTE_LPM_VALID_EXT_ENTRY_BITMASK) ==
@@ -112,6 +115,9 @@ rte_lpm_lookupx4(const struct rte_lpm *lpm, xmm_t ip, uint32_t hop[4],
 	hop[1] = (tbl[1] & RTE_LPM_LOOKUP_SUCCESS) ? tbl[1] & 0x00FFFFFF : defv;
 	hop[2] = (tbl[2] & RTE_LPM_LOOKUP_SUCCESS) ? tbl[2] & 0x00FFFFFF : defv;
 	hop[3] = (tbl[3] & RTE_LPM_LOOKUP_SUCCESS) ? tbl[3] & 0x00FFFFFF : defv;
+
+finish:
+	tracepoint(librte_lpm, rte_lpm_lookupx4, lpm->name, ip, hop, defv, tbl);
 }
 
 #ifdef __cplusplus

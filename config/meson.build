@@ -138,6 +138,15 @@ if libbsd.found()
 	dpdk_conf.set('RTE_USE_LIBBSD', 1)
 endif
 
+# check for lttng-ust library
+# lttng_ust_dep = dependency('lttng-ust', required: false)
+# if lttng_ust_dep.found()
+#		dpdk_extra_ldflags += '-llttng-ust'
+#        #dpdk_conf.set('RTE_HAS_LIBLTTNG_UST', 1)
+#        #add_project_link_arguments('-llttng-ust', language: 'c')
+#        #dpdk_extra_ldflags += '-llttng-ust'
+# endif
+
 # add -include rte_config to cflags
 add_project_arguments('-include', 'rte_config.h', language: 'c')
 

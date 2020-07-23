@@ -6,4 +6,4 @@ reason = 'missing dependency, DPDK vhost library'
 version = 2
 sources = files('rte_eth_vhost.c')
 install_headers('rte_eth_vhost.h')
-deps += 'vhost'
+deps += ['vhost', 'trace']

@@ -21,6 +21,9 @@
 #include "iotlb.h"
 #include "vhost.h"
 
+#define TRACEPOINT_DEFINE
+#include "rte_vhost_trace.h"
+
 #define MAX_PKT_BURST 32
 
 #define MAX_BATCH_LEN 256
@@ -793,6 +796,9 @@ virtio_dev_rx_split(struct virtio_net *dev, struct vhost_virtqueue *vq,
 
 	rte_prefetch0(&vq->avail->ring[vq->last_avail_idx & (vq->size - 1)]);
 
+	tracepoint(librte_vhost, write_to_tx_ring, dev->vid, vq, count,
+		 vq->last_avail_idx, avail_head);
+
 	for (pkt_idx = 0; pkt_idx < count; pkt_idx++) {
 		uint32_t pkt_len = pkts[pkt_idx]->pkt_len + dev->vhost_hlen;
 		uint16_t nr_vec = 0;
@@ -925,6 +931,8 @@ out:
 
 out_access_unlock:
 	rte_spinlock_unlock(&vq->access_lock);
+
+	tracepoint(librte_vhost, enqueue_burst, dev->vid, vq, queue_id, count, nb_tx);
 
 	return nb_tx;
 }
@@ -1338,7 +1346,7 @@ virtio_dev_tx_split(struct virtio_net *dev, struct vhost_virtqueue *vq,
 	count = RTE_MIN(count, MAX_PKT_BURST);
 	count = RTE_MIN(count, free_entries);
 	VHOST_LOG_DEBUG(VHOST_DATA, "(%d) about to dequeue %u buffers\n",
-			dev->vid, count);
+			dev->vid, count);			
 
 	for (i = 0; i < count; i++) {
 		struct buf_vector buf_vec[BUF_VECTOR_MAX];
@@ -1406,6 +1414,8 @@ virtio_dev_tx_split(struct virtio_net *dev, struct vhost_virtqueue *vq,
 		}
 	}
 
+	tracepoint(librte_vhost, read_from_rx_ring, dev->vid, vq, count, i, vq->last_avail_idx,
+		 vq->avail->idx);
 	return i;
 }
 
@@ -1521,6 +1531,8 @@ virtio_dev_tx_packed(struct virtio_net *dev, struct vhost_virtqueue *vq,
 		}
 	}
 
+	//TODO : how to compute the available entries in the queue
+	//tracepoint(librte_vhost, read_from_rx_ring, dev->vid, vq, i, 0 /*To Modify*/);
 	return i;
 }
 
@@ -1619,5 +1631,6 @@ out_access_unlock:
 		count += 1;
 	}
 
+	tracepoint(librte_vhost, dequeue_burst, dev->vid, vq, queue_id, count);
 	return count;
 }

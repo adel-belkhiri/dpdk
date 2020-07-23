@@ -7,6 +7,7 @@
 #include <rte_tailq.h>
 
 #include "acl.h"
+#include "rte_acl_trace.h"
 
 TAILQ_HEAD(rte_acl_list, rte_tailq_entry);
 
@@ -93,6 +94,8 @@ rte_acl_set_ctx_classify(struct rte_acl_ctx *ctx, enum rte_acl_classify_alg alg)
 {
 	if (ctx == NULL || (uint32_t)alg >= RTE_DIM(classify_fns))
 		return -EINVAL;
+
+	tracepoint(librte_acl, rte_acl_set_ctx_classify, ctx, alg);
 
 	ctx->alg = alg;
 	return 0;
@@ -200,6 +203,8 @@ rte_acl_free(struct rte_acl_ctx *ctx)
 
 	rte_mcfg_tailq_write_unlock();
 
+	tracepoint(librte_acl, rte_acl_free, ctx->name);
+
 	rte_free(ctx->mem);
 	rte_free(ctx);
 	rte_free(te);
@@ -267,6 +272,8 @@ rte_acl_create(const struct rte_acl_param *param)
 		te->data = (void *) ctx;
 
 		TAILQ_INSERT_TAIL(acl_list, te, next);
+
+		tracepoint(librte_acl, rte_acl_create, ctx, param);
 	}
 
 exit:
@@ -320,10 +327,13 @@ rte_acl_add_rules(struct rte_acl_ctx *ctx, const struct rte_acl_rule *rules,
 			RTE_LOG(ERR, ACL, "%s(%s): rule #%u is invalid\n",
 				__func__, ctx->name, i + 1);
 			return rc;
-		}
+		}	
 	}
 
-	return acl_add_rules(ctx, rules, num);
+	int ret = acl_add_rules(ctx, rules, num);
+	trace_acl_rules(ctx, num, rules);
+	return ret;
+
 }
 
 /*

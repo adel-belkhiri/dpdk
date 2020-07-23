@@ -27,7 +27,7 @@
 #define BATCH_SIZE (1 << 12)
 #define BULK_SIZE 32
 
-#define MAX_RULE_NUM (1200000)
+#define MAX_RULE_NUM (120000)
 
 struct route_rule {
 	uint32_t ip;
@@ -275,8 +275,8 @@ static void generate_large_route_rule_table(void)
 	num_route_entries = 0;
 	memset(large_route_table, 0, sizeof(large_route_table));
 
-	for (ip_class = IP_CLASS_A; ip_class <= IP_CLASS_C; ip_class++) {
-		for (depth = 1; depth <= RTE_LPM_MAX_DEPTH; depth++) {
+	for (ip_class = IP_CLASS_A; ip_class <= IP_CLASS_B; ip_class++) {
+		for (depth = 1; depth <= 8 /*RTE_LPM_MAX_DEPTH*/; depth++) {
 			generate_random_rule_prefix(ip_class, depth);
 		}
 	}

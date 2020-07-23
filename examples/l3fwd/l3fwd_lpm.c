@@ -45,12 +45,12 @@ struct ipv6_l3fwd_lpm_route {
 static struct ipv4_l3fwd_lpm_route ipv4_l3fwd_lpm_route_array[] = {
 	{RTE_IPV4(192, 18, 0, 0), 24, 0},
 	{RTE_IPV4(192, 18, 1, 0), 24, 1},
-	{RTE_IPV4(192, 18, 2, 0), 24, 2},
-	{RTE_IPV4(192, 18, 3, 0), 24, 3},
-	{RTE_IPV4(192, 18, 4, 0), 24, 4},
-	{RTE_IPV4(192, 18, 5, 0), 24, 5},
-	{RTE_IPV4(192, 18, 6, 0), 24, 6},
-	{RTE_IPV4(192, 18, 7, 0), 24, 7},
+	{RTE_IPV4(192, 18, 2, 0), 24, 0},
+	{RTE_IPV4(192, 18, 3, 0), 24, 1},
+	{RTE_IPV4(192, 18, 4, 0), 24, 3},
+	{RTE_IPV4(192, 18, 5, 0), 24, 4},
+	{RTE_IPV4(192, 18, 6, 0), 24, 0},
+	{RTE_IPV4(192, 18, 7, 0), 24, 1},
 };
 
 /* 2001:0200::/48 is IANA reserved range for IPv6 benchmarking (RFC5180) */

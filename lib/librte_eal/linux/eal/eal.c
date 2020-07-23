@@ -62,6 +62,8 @@
 #include "eal_vfio.h"
 #include "hotplug_mp.h"
 
+#include "rte_eal_trace.h"
+
 #define MEMSIZE_IF_NO_HUGE_PAGE (64ULL * 1024ULL * 1024ULL)
 
 #define SOCKET_MEM_STRLEN (RTE_MAX_NUMA_NODES * 10)
@@ -1223,6 +1225,8 @@ rte_eal_init(int argc, char **argv)
 	eal_thread_init_master(rte_config.master_lcore);
 
 	ret = eal_thread_dump_affinity(cpuset, sizeof(cpuset));
+
+	tracepoint(librte_eal, thread_lcore_ready, rte_config.master_lcore, 1 /*master*/, cpuset);
 
 	RTE_LOG(DEBUG, EAL, "Master lcore %u is ready (tid=%zx;cpuset=[%s%s])\n",
 		rte_config.master_lcore, (uintptr_t)thread_id, cpuset,

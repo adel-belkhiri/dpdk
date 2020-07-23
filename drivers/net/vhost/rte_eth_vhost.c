@@ -18,6 +18,9 @@
 
 #include "rte_eth_vhost.h"
 
+#define TRACEPOINT_DEFINE
+#include "rte_eth_vhost_trace.h"
+
 static int vhost_logtype;
 
 #define VHOST_LOG(level, ...) \
@@ -704,6 +707,8 @@ queue_setup(struct rte_eth_dev *eth_dev, struct pmd_internal *internal)
 		vq->vid = internal->vid;
 		vq->internal = internal;
 		vq->port = eth_dev->data->port_id;
+
+		tracepoint(vhost_pmd, queue_setup, eth_dev->device->name, vq->vid, vq->port, vq->virtqueue_id, "Rx");
 	}
 	for (i = 0; i < eth_dev->data->nb_tx_queues; i++) {
 		vq = eth_dev->data->tx_queues[i];
@@ -712,6 +717,8 @@ queue_setup(struct rte_eth_dev *eth_dev, struct pmd_internal *internal)
 		vq->vid = internal->vid;
 		vq->internal = internal;
 		vq->port = eth_dev->data->port_id;
+
+		tracepoint(vhost_pmd, queue_setup, eth_dev->device->name, vq->vid, vq->port, vq->virtqueue_id, "Tx");
 	}
 }
 
@@ -1030,6 +1037,8 @@ eth_rx_queue_setup(struct rte_eth_dev *dev, uint16_t rx_queue_id,
 	vq->virtqueue_id = rx_queue_id * VIRTIO_QNUM + VIRTIO_TXQ;
 	dev->data->rx_queues[rx_queue_id] = vq;
 
+	tracepoint(vhost_pmd, eth_rx_queue_setup, dev->device->name, rx_queue_id, socket_id, vq->virtqueue_id);
+
 	return 0;
 }
 
@@ -1050,6 +1059,8 @@ eth_tx_queue_setup(struct rte_eth_dev *dev, uint16_t tx_queue_id,
 
 	vq->virtqueue_id = tx_queue_id * VIRTIO_QNUM + VIRTIO_RXQ;
 	dev->data->tx_queues[tx_queue_id] = vq;
+
+    tracepoint(vhost_pmd, eth_tx_queue_setup, dev->device->name, tx_queue_id, socket_id, vq->virtqueue_id);
 
 	return 0;
 }
@@ -1283,6 +1294,10 @@ eth_dev_vhost_create(struct rte_vdev_device *dev, char *iface_name,
 	}
 
 	rte_eth_dev_probing_finish(eth_dev);
+
+	tracepoint(vhost_pmd, eth_dev_vhost_create, data->name, iface_name, data->mac_addrs,
+		data->nb_rx_queues, data->nb_tx_queues, flags);
+
 	return data->port_id;
 
 error:
@@ -1449,6 +1464,8 @@ rte_pmd_vhost_remove(struct rte_vdev_device *dev)
 	eth_dev_close(eth_dev);
 
 	rte_eth_dev_release_port(eth_dev);
+
+	tracepoint(vhost_pmd, rte_pmd_vhost_remove, name);
 
 	return 0;
 }
