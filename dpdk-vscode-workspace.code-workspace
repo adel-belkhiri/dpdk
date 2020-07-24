@@ -35,15 +35,31 @@
 			"cstddef": "cpp",
 			"*.tcc": "cpp",
 			"string": "cpp"
-		}
-	},
-	"colorTabs.config": [
-		{
-			"regex": ".*/web/.*"
 		},
-		{
-			"regex": ".*/mobile/.*"
-		}
-	],
+		"colorTabs.config": [
+			{
+				"regex": ".*/librte_lpm/.*"
+			},
+			{
+				"regex": ".*/librte_ethdev/.*"
+			},
+			{
+				"regex": ".*/librte_eal/.*"
+			},
+			{
+				"regex": ".*/librte_vhost/.*"
+			},
+			{
+				"regex": ".*/librte_hash/.*"
+			}, 
+			{
+				"regex": ".*/web/.*"
+			},
+			{
+				"regex": ".*/mobile/.*"
+			}
+		],
+		"colorTabs.activityBarBackground": true
+	},
 	"C_Cpp.default.includePath": []
 }

@@ -12,7 +12,7 @@
 #include <rte_table_acl.h>
 
 /** 
- * This event is fired when a @p classifier is created 
+ * This event is fired when a classifier is created 
  */ 
 TRACEPOINT_EVENT(
     librte_flow_classify,
@@ -70,7 +70,7 @@ TRACEPOINT_EVENT(
 )
 
 /**
- * This event is fired when a table entry is added
+ * This event is fired when a table entry is deleted
  */ 
 TRACEPOINT_EVENT(
     librte_flow_classify,
@@ -88,7 +88,8 @@ TRACEPOINT_EVENT(
 )
 
 /**
- * This event is fired when a table entry is added
+ * This event is fired when a table entry is added. Up to now, just "acl_ipv4_5tuple" flows
+ *  are supported by DPDK.
  */ 
 TRACEPOINT_EVENT(
     librte_flow_classify,
@@ -124,7 +125,7 @@ TRACEPOINT_EVENT(
 )
 
 /**
- * This event is fired when a table entry is added
+ * This event is fired when a lookup is initiated
  */ 
 TRACEPOINT_EVENT(
     librte_flow_classify,
