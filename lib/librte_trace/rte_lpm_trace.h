@@ -91,6 +91,10 @@ TRACEPOINT_EVENT(
     )
 )
 
+/**
+ * P.S.: rule_depth is declared "ctf_sequence" to sidestep a bug in tracecompass related to 
+ * parsing "ctf_array" fields.
+ */ 
 TRACEPOINT_EVENT(
     librte_lpm,
     rte_lpm_lookupx4,
@@ -103,7 +107,7 @@ TRACEPOINT_EVENT(
     ),
     TP_FIELDS(
         ctf_integer_hex(void*, lpm, lpm)
-        ctf_sequence(uint32_t, ips,
+        ctf_array(uint32_t, ips,
         ({
             uint32_t vec[4];
 
@@ -113,8 +117,8 @@ TRACEPOINT_EVENT(
             vec[3] = _mm_extract_epi32(ips, 3);
             
             vec;
-        }), size_t, 4)
-        ctf_sequence(uint32_t, next_hops, next_hops, size_t, 4)  
+        }), 4)
+        ctf_array(uint32_t, next_hops, next_hops, 4)
         ctf_integer(uint32_t, defv, defv)
         ctf_sequence(uint32_t, rule_depth,
         ({

@@ -28,7 +28,7 @@ TRACEPOINT_EVENT(
     TP_FIELDS(
         ctf_integer_hex(void*, tbl, tbl)
         ctf_string(name, p->name)
-        ctf_integer(uint32_t, n_rules, p->n_rules)
+        ctf_integer(uint32_t, max_rules, p->n_rules)
         ctf_integer(uint32_t, number_tlb8s, p->number_tbl8s)
         ctf_integer(int, flags, p->flags)
         ctf_integer(uint32_t, entry_unique_size, p->entry_unique_size)
@@ -90,7 +90,7 @@ TRACEPOINT_EVENT(
         ctf_integer_hex(void*, tbl, tbl)
         ctf_integer(uint32_t, ip, key->ip)
         ctf_integer(uint8_t, depth, key->depth)
-        ctf_integer_hex(void*, entry_ptr, entry_ptr)
+        ctf_integer(void*, entry_ptr, entry_ptr)
         ctf_integer(uint32_t, nht_pos, nht_pos)   
     )
 )
