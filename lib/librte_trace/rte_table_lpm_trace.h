@@ -15,6 +15,12 @@
 
 /** 
  * Create an LPM table
+ * @p tbl: pointer to the LPM table
+ * @p name: name of the table
+ * @p entry_unique_size: byte size of the key identifying the LPM rule.
+ * @p entry_size: byte size of the the table entry (the rule)
+ * @p max_rules: Maximum capacity of the table in terms of number of rules
+ * @p lpm: pointer to the low-level LPM object
  */
 TRACEPOINT_EVENT(
     librte_table_lpm,
@@ -53,6 +59,8 @@ TRACEPOINT_EVENT(
 
  /** 
   * Add an entry to the LPM table
+  * @p entry_ptr: pointer to the next_hop entry. 
+  * PS : Many rules can share the same next_hop entry.
   */
 TRACEPOINT_EVENT(
     librte_table_lpm,
@@ -69,7 +77,7 @@ TRACEPOINT_EVENT(
         ctf_integer(uint32_t, ip, key->ip)
         ctf_integer(uint8_t, depth, key->depth)
         ctf_integer(int, key_found, key_found)
-        ctf_integer(uint32_t, nht_pos, nht_pos)        
+        ctf_integer(uint32_t, nht_pos, nht_pos)
         ctf_integer(void*, entry_ptr, entry_ptr)
     )
 )
@@ -96,10 +104,14 @@ TRACEPOINT_EVENT(
 )
 
 /**
- * LPM Lookup 
- * **pkts : array of mbuff to search for their corresponding lpm entries
- * n_pkts_in : number of packets concerned with the lookup
- * n_pkts_out : number of packets to which a corresponding match was found
+ * LPM Lookup.
+ * 
+ * @p entries_ptr: pointers to next_hop entries as provided by the low-level LPM object.
+ * These pointers cannot be used as an ID of an LPM rule since many lpm rules may point 
+ * to the same next_hop data structure.
+ * @p n_pkts_in: number of packets concerned with the lookup
+ * @p n_pkts_out: number of packets to which a corresponding match was found
+ * @p pkts_out_mask: mask specifying which packets match with a rule.
  */ 
 TRACEPOINT_EVENT(
     librte_table_lpm,
@@ -107,7 +119,7 @@ TRACEPOINT_EVENT(
     TP_ARGS(
         const void*, tbl,
         void**, entries,
-        uint64_t, pkts_out_mask,        
+        uint64_t, pkts_out_mask,
         uint32_t, n_pkts_in,
         uint32_t, n_pkts_out
     ),
@@ -124,9 +136,9 @@ TRACEPOINT_EVENT(
                     array[i] = NULL;
             }    
             array;
-        }), size_t, n_pkts_in)      
+        }), size_t, n_pkts_in)
         ctf_integer(uint32_t, n_pkts_in, n_pkts_in)
-        ctf_integer(uint32_t, n_pkts_out, n_pkts_out)   
+        ctf_integer(uint32_t, n_pkts_out, n_pkts_out)
     )
 )
 

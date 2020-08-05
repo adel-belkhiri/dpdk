@@ -624,7 +624,7 @@ flow_classifier_lookup(struct rte_flow_classifier *cls,
 		cls->nb_pkts = 0;
 
 	tracepoint(librte_flow_classify, flow_classifier_lookup, cls->name, table->h_table,
-		nb_pkts, __builtin_popcountll(lookup_hit_mask), (void **)cls->entries);
+		nb_pkts, __builtin_popcountll(lookup_hit_mask), lookup_hit_mask, (void **)cls->entries);
 
 	return ret;
 }

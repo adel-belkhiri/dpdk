@@ -388,6 +388,10 @@ test_table_lpm(void)
 	lpm_key.depth = 16;
 	status = rte_table_lpm_ops.f_add(table, &lpm_key, &entry, &key_found,
 		&entry_ptr);
+
+	lpm_key.ip = 0xacacacac;
+	status = rte_table_lpm_ops.f_add(table, &lpm_key, &entry, &key_found,
+	&entry_ptr);
 	if (status != 0)
 		return -15;
 

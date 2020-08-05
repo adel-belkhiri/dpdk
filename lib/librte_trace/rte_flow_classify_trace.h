@@ -125,7 +125,11 @@ TRACEPOINT_EVENT(
 )
 
 /**
- * This event is fired when a lookup is initiated
+ * This event is fired when a lookup is initiated. A lookup is initiated when the user call the function
+ * "rte_flow_classifier_query" to find packets matching a given "single" flow rule in the table.
+ * First, the lookup (function "flow_classifier_lookup") determins all the rules that match input packets and 
+ * the "rte_flow_classifier_query" checks if the input rule is among them and, if so, executes its action 
+ * part (count number of matching packets).
  */ 
 TRACEPOINT_EVENT(
     librte_flow_classify,
@@ -133,16 +137,28 @@ TRACEPOINT_EVENT(
     TP_ARGS(
         const char*, cls_name,
         const void*, tbl,
-        uint32_t, nb_pkts_in,
-        uint32_t, nb_pkts_out,        
+        uint32_t, n_pkts_in,
+        uint32_t, n_pkts_out,
+        uint64_t, lookup_hit_mask,
         void**, entries_ptr
     ),
     TP_FIELDS(
         ctf_string(cls_name, cls_name)
         ctf_integer_hex(const void*, tbl, tbl)
-        ctf_integer(uint32_t, nb_pkts_in, nb_pkts_in)
-        ctf_integer(uint32_t, nb_pkts_out, nb_pkts_out)        
-        ctf_sequence(void*, entries_ptr, entries_ptr, size_t, nb_pkts_in)        
+        ctf_integer(uint32_t, n_pkts_in, n_pkts_in)
+        ctf_integer(uint32_t, n_pkts_out, n_pkts_out)
+        ctf_sequence(void*, entries_ptr,
+        ({
+            void* array[MAX_BURST_PKT_NUM];
+            for(int i = 0; i < n_pkts_in; i++) {
+                uint64_t pkt_mask = 1LLU << i;
+                if(pkt_mask & lookup_hit_mask) 
+                    array[i] = entries_ptr[i];
+                else
+                    array[i] = NULL;
+            }    
+            array;
+        }), size_t, n_pkts_in)
     )
 )
 

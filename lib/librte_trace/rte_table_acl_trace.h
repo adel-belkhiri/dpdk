@@ -15,6 +15,17 @@
 
 /** 
  * Create an ACL table
+ * @p tbl 
+ * @p name
+ * @p max_rule_num
+ * @p rule_size
+ * @p num_categories: The number of categories is fixed to 1. 
+ * @p mem_max_size
+ * @p entry_size
+ * @p field_def_type Type of the field :
+ *          0 : RTE_ACL_FIELD_TYPE_MASK
+ *          1 : RTE_ACL_FIELD_TYPE_RANGE
+ *          2 : RTE_ACL_FIELD_TYPE_BITMASK
  */
 TRACEPOINT_EVENT(
     librte_table_acl,
@@ -53,12 +64,12 @@ TRACEPOINT_EVENT(
             for(int i = 0; i < cfg->num_fields; i++)
                 array[i] = (uint32_t) cfg->defs[i].size;
             array;
-        }), size_t, cfg->num_fields)        
+        }), size_t, cfg->num_fields)
     )
 )
 
 /** 
- * Delete an ACL table
+ * Free an ACL table
  */
 TRACEPOINT_EVENT(
     librte_table_acl,
@@ -73,6 +84,13 @@ TRACEPOINT_EVENT(
 
 /** 
  * Add an entry to an ACL table
+ * 
+ * @p name_id: This field alternates between 1 and 0. It is used by the ACL table to create ACL context with
+ * differrent names table_name_a or table_name_b.
+ * @p rule_pos: Index of the rule. Each rule has a uniq index which is its position in the table.
+ * @p key_found: Indicates whether the rule exists already in the table or not. In the latter case only the 
+ * action part of the rule is updated.
+ * @p ctx: Pointer on the low-level acl context (different after each entry_add/delete).
  */
 TRACEPOINT_EVENT(
     librte_table_acl,
@@ -83,7 +101,6 @@ TRACEPOINT_EVENT(
         uint32_t, num_fields,
         struct rte_table_acl_rule_add_params *, rule,
         uint32_t, rule_pos,
-        const void*, entry_ptr,
         int, key_found,
         const void*, ctx
     ),
@@ -109,26 +126,24 @@ TRACEPOINT_EVENT(
         }), size_t, num_fields)  
 
         ctf_integer(uint32_t, rule_pos, rule_pos)
-        ctf_integer(const void*, entry_ptr, entry_ptr)
         ctf_integer(int, key_found, key_found)
         ctf_integer_hex(const void*, ctx, ctx)
     )
 )
 
 /** 
- * Add a bulk of entries to an ACL table
+ * Add a bulk of entries to the ACL table
  */
 #define trace_acl_entry_add_bulk(tbl, name_id, num_fields, n_keys, keys,             \
-    key_found, action_table, pos, ctx)                                              \
+    key_found, pos, ctx)                                                             \
     for (unsigned int i = 0; i < n_keys; i++) {                                      \
         struct rte_table_acl_rule_add_params *rule = keys[i];                        \
-        void* entry_ptr =  pos[i] == 0 ? NULL :  action_table[pos[i]];          \
         tracepoint(librte_table_acl, rte_table_acl_entry_add, tbl, name_id,          \
-            num_fields, rule, pos[i], entry_ptr, key_found[i], ctx);                     \
+            num_fields, rule, pos[i], key_found[i], ctx);                            \
     }
 
 /** 
- * Delete an entry from an ACL table
+ * Delete an entry from the ACL table
  */
 TRACEPOINT_EVENT(
     librte_table_acl,
@@ -137,20 +152,18 @@ TRACEPOINT_EVENT(
         const void*, tbl,
         uint32_t, name_id,
         uint32_t, rule_pos,
-        const void*, entry_ptr,
         const void*, ctx
     ),
     TP_FIELDS(
         ctf_integer_hex(const void*, tbl, tbl)
         ctf_integer(uint32_t, name_id, name_id)
         ctf_integer(uint32_t, rule_pos, rule_pos)
-        ctf_integer(const void*, entry_ptr, entry_ptr)
         ctf_integer_hex(const void*, ctx, ctx)     
     )
 )
 
 /** 
- * Delete a bulk of entries from an ACL table
+ * Delete a bulk of entries from the ACL table
  */
 TRACEPOINT_EVENT(
     librte_table_acl,
@@ -160,45 +173,36 @@ TRACEPOINT_EVENT(
         uint32_t, name_id,
         uint32_t, n_keys,
         uint32_t*, rule_pos,
-        void**, entries_ptr,
         const void*, ctx
     ),
     TP_FIELDS(
         ctf_integer_hex(const void*, tbl, tbl)
         ctf_integer(uint32_t, name_id, name_id)
-        ctf_sequence(void*, rule_pos, rule_pos, size_t, n_keys)
-        ctf_sequence(void*, entries_ptr, entries_ptr, size_t, n_keys)
+        ctf_sequence(uint32_t, rule_pos, rule_pos, size_t, n_keys)
         ctf_integer_hex(const void*, ctx, ctx)
     )
 )
 
 /** 
  * Lookup for ACL rules matching a burst of packets
+ * @p n_pkts_in: Number of packets feeded to the lookup function.
+ * @p n_pkts_out: Number of matching packets.
+ * @p rule_pos: Each rule has a uniq position. It is used as an ID.
  */
 TRACEPOINT_EVENT(
     librte_table_acl,
     rte_table_acl_lookup,
     TP_ARGS(
         const void*, tbl,
-        void**, entries_ptr,
         uint32_t*, rule_pos,
-        uint32_t, n_pkts_in,     
+        uint32_t, n_pkts_in,
         uint32_t, n_pkts_out
     ),
     TP_FIELDS(
         ctf_integer_hex(const void*, tbl, tbl)
-        ctf_sequence(uint32_t, rule_pos, rule_pos, size_t, n_pkts_in)        
-        ctf_sequence(void*, rule_ptr,
-        ({
-            void* rules[MAX_BURST_PKT_NUM];
-            for(int i = 0; i < n_pkts_in; i++)
-                rules[i] = (rule_pos[i] == 0 ? 
-                    NULL : entries_ptr[rule_pos[i]]);
-            
-            rules;
-        }), size_t, n_pkts_in)
+        ctf_sequence(uint32_t, rule_pos, rule_pos, size_t, n_pkts_in)
         ctf_integer(uint32_t, n_pkts_in, n_pkts_in)
-        ctf_integer(uint32_t, n_pkts_out, n_pkts_out) 
+        ctf_integer(uint32_t, n_pkts_out, n_pkts_out)
     )
 )
 #endif /* _RTE_TABLE_ACL_TRACE_H */

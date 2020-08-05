@@ -336,7 +336,7 @@ rte_table_acl_entry_add(
 
 finish:
 	tracepoint(librte_table_acl, rte_table_acl_entry_add, table, acl->name_id,
-		acl->cfg.num_fields, rule, free_pos, *entry_ptr, *key_found, acl->ctx);
+		acl->cfg.num_fields, rule, i < acl->n_rules ? i : free_pos , *key_found, acl->ctx);
 
 	return 0;
 }
@@ -421,7 +421,7 @@ rte_table_acl_entry_delete(
 			acl->entry_size);
 
 	tracepoint(librte_table_acl, rte_table_acl_entry_delete, table, acl->name_id, pos,
-		&acl->memory[pos * acl->entry_size], acl->ctx);
+		acl->ctx);
 
 	return 0;
 }
@@ -605,7 +605,7 @@ rte_table_acl_entry_add_bulk(
 	}
 
 	trace_acl_entry_add_bulk(table, acl->name_id, acl->cfg.num_fields, n_keys,
-		keys, key_found, entries_ptr, rule_pos, acl->ctx);
+		keys, key_found, rule_pos, acl->ctx);
 
 	return 0;
 }
@@ -728,7 +728,7 @@ rte_table_acl_entry_delete_bulk(
 	}
 
 	tracepoint(librte_table_acl, rte_table_acl_entry_delete_bulk, acl, acl->name_id, n_keys,
-		rule_pos, entries, acl->ctx);
+		rule_pos, acl->ctx);
 
 	return 0;
 }
@@ -790,8 +790,7 @@ rte_table_acl_lookup(
 	__rte_unused uint32_t n_pkts_out = __builtin_popcountll(pkts_out_mask);
 	RTE_TABLE_ACL_STATS_PKTS_LOOKUP_MISS(acl, n_pkts_in - n_pkts_out);
 
-	tracepoint(librte_table_acl, rte_table_acl_lookup, acl, entries,
-		results, n_pkts_in, n_pkts_out);
+	tracepoint(librte_table_acl, rte_table_acl_lookup, acl, results, n_pkts_in, n_pkts_out);
 
 	return 0;
 }

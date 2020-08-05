@@ -140,7 +140,7 @@ rte_table_hash_cuckoo_create(void *params,
 		__func__, p->name, total_size);
 
 	tracepoint(librte_table_hash, rte_table_hash_cuckoo_create,
-		h_table, p->name, p->n_keys, p->key_size, entry_size, p->f_hash, p->seed, p->key_offset);
+		t, p->name, p->n_keys, p->key_size, entry_size, p->f_hash, p->seed, p->key_offset);
 
 	return t;
 }
@@ -152,7 +152,7 @@ rte_table_hash_cuckoo_free(void *table) {
 	if (table == NULL)
 		return -EINVAL;
 
-	tracepoint(librte_table_hash, rte_table_hash_cuckoo_free, t->h_table);
+	tracepoint(librte_table_hash, rte_table_hash_cuckoo_free, table);
 
 	rte_hash_free(t->h_table);
 	rte_free(t);
@@ -208,7 +208,7 @@ rte_table_hash_cuckoo_entry_add(void *table, void *key, void *entry,
 
 success:
 	tracepoint(librte_table_hash, rte_table_hash_cuckoo_entry_add, table, key,
-		entry, key_found, entry_ptr);
+		key_found, entry_ptr);
 
 	return 0;
 }
@@ -236,7 +236,7 @@ rte_table_hash_cuckoo_entry_delete(void *table, void *key,
 
 		memset(&t->memory[pos * t->entry_size], 0, t->entry_size);
 
-		tracepoint(librte_table_hash, rte_table_hash_cuckoo_entry_delete, table, key);
+		tracepoint(librte_table_hash, rte_table_hash_cuckoo_entry_delete, table, key, entry_ptr);
 
 		return 0;
 	}
@@ -311,7 +311,7 @@ rte_table_hash_cuckoo_lookup(void *table,
 	RTE_TABLE_HASH_CUCKOO_STATS_PKTS_LOOKUP_MISS(t,
 			n_pkts_in - n_pkts_out);
 
-	tracepoint(librte_table_hash, rte_table_hash_cuckoo_lookup, table, n_pkts_in, n_pkts_out);
+	tracepoint(librte_table_hash, rte_table_hash_cuckoo_lookup, table, entries, pkts_mask_out, n_pkts_in, n_pkts_out);
 
 	return 0;
 
