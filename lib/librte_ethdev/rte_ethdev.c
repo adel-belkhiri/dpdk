@@ -43,8 +43,6 @@
 #include "rte_ethdev_driver.h"
 #include "ethdev_profile.h"
 #include "ethdev_private.h"
-
-#define TRACEPOINT_DEFINE
 #include "rte_ethdev_trace.h"
 
 int rte_eth_dev_logtype;
@@ -1330,6 +1328,7 @@ rte_eth_dev_configure(uint16_t port_id, uint16_t nb_rx_q, uint16_t nb_tx_q,
 		goto rollback;
 	}
 
+	tracepoint(librte_ethdev, rte_eth_dev_configure, dev, port_id);
 	return 0;
 
 rollback:
@@ -1449,6 +1448,9 @@ rte_eth_dev_start(uint16_t port_id)
 		RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->link_update, -ENOTSUP);
 		(*dev->dev_ops->link_update)(dev, 0);
 	}
+
+	tracepoint(librte_ethdev, rte_eth_dev_start, port_id);
+
 	return 0;
 }
 
@@ -1471,6 +1473,8 @@ rte_eth_dev_stop(uint16_t port_id)
 
 	dev->data->dev_started = 0;
 	(*dev->dev_ops->dev_stop)(dev);
+
+	tracepoint(librte_ethdev, rte_eth_dev_stop, port_id);
 }
 
 int
@@ -1483,6 +1487,9 @@ rte_eth_dev_set_link_up(uint16_t port_id)
 	dev = &rte_eth_devices[port_id];
 
 	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->dev_set_link_up, -ENOTSUP);
+
+	tracepoint(librte_ethdev, rte_eth_dev_set_link_up, port_id);
+
 	return eth_err(port_id, (*dev->dev_ops->dev_set_link_up)(dev));
 }
 
@@ -1496,6 +1503,9 @@ rte_eth_dev_set_link_down(uint16_t port_id)
 	dev = &rte_eth_devices[port_id];
 
 	RTE_FUNC_PTR_OR_ERR_RET(*dev->dev_ops->dev_set_link_down, -ENOTSUP);
+
+	tracepoint(librte_ethdev, rte_eth_dev_set_link_down, port_id);
+
 	return eth_err(port_id, (*dev->dev_ops->dev_set_link_down)(dev));
 }
 
@@ -1527,6 +1537,8 @@ rte_eth_dev_close(uint16_t port_id)
 	dev->data->nb_tx_queues = 0;
 	rte_free(dev->data->tx_queues);
 	dev->data->tx_queues = NULL;
+
+	tracepoint(librte_ethdev, rte_eth_dev_close, port_id);
 }
 
 int
@@ -3761,7 +3773,7 @@ rte_eth_dev_destroy(struct rte_eth_dev *ethdev,
 		return ret;
 
 	tracepoint(librte_ethdev, rte_eth_dev_destroy, ethdev->data->name);
-	
+
 	return rte_eth_dev_release_port(ethdev);
 }
 

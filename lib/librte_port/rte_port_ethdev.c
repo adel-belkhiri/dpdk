@@ -9,6 +9,7 @@
 #include <rte_malloc.h>
 
 #include "rte_port_ethdev.h"
+#include "rte_port_ethdev_trace.h"
 
 /*
  * Port ETHDEV Reader
@@ -59,6 +60,8 @@ rte_port_ethdev_reader_create(void *params, int socket_id)
 	port->port_id = conf->port_id;
 	port->queue_id = conf->queue_id;
 
+    tracepoint(librte_port_ethdev,  rte_port_ethdev_reader_create, port, conf);
+
 	return port;
 }
 
@@ -71,6 +74,11 @@ rte_port_ethdev_reader_rx(void *port, struct rte_mbuf **pkts, uint32_t n_pkts)
 
 	rx_pkt_cnt = rte_eth_rx_burst(p->port_id, p->queue_id, pkts, n_pkts);
 	RTE_PORT_ETHDEV_READER_STATS_PKTS_IN_ADD(p, rx_pkt_cnt);
+	/* function executed in polling mode. We limit then the events generation
+	to significant occurances */
+	if(rx_pkt_cnt)
+		tracepoint(librte_port_ethdev, rte_port_ethdev_reader_rx, p, n_pkts, rx_pkt_cnt);
+
 	return rx_pkt_cnt;
 }
 
@@ -82,8 +90,9 @@ rte_port_ethdev_reader_free(void *port)
 		return -EINVAL;
 	}
 
-	rte_free(port);
+	tracepoint(librte_port_ethdev, rte_port_ethdev_reader_free, port);
 
+	rte_free(port);
 	return 0;
 }
 
@@ -161,6 +170,8 @@ rte_port_ethdev_writer_create(void *params, int socket_id)
 	port->tx_buf_count = 0;
 	port->bsz_mask = 1LLU << (conf->tx_burst_sz - 1);
 
+	tracepoint(librte_port_ethdev, rte_port_ethdev_writer_create, port, conf);
+
 	return port;
 }
 
@@ -176,6 +187,8 @@ send_burst(struct rte_port_ethdev_writer *p)
 	for ( ; nb_tx < p->tx_buf_count; nb_tx++)
 		rte_pktmbuf_free(p->tx_buf[nb_tx]);
 
+	tracepoint(librte_port_ethdev, send_burst, p, nb_tx, p->tx_buf_count);
+
 	p->tx_buf_count = 0;
 }
 
@@ -187,6 +200,9 @@ rte_port_ethdev_writer_tx(void *port, struct rte_mbuf *pkt)
 
 	p->tx_buf[p->tx_buf_count++] = pkt;
 	RTE_PORT_ETHDEV_WRITER_STATS_PKTS_IN_ADD(p, 1);
+
+	tracepoint(librte_port_ethdev, rte_port_ethdev_writer_tx, port, p->tx_buf_count);
+
 	if (p->tx_buf_count >= p->tx_burst_sz)
 		send_burst(p);
 
@@ -262,6 +278,7 @@ rte_port_ethdev_writer_free(void *port)
 	}
 
 	rte_port_ethdev_writer_flush(port);
+	tracepoint(librte_port_ethdev, rte_port_ethdev_writer_free, port);
 	rte_free(port);
 
 	return 0;
