@@ -15,6 +15,7 @@
 #endif
 
 #include "rte_port_source_sink.h"
+#include <rte_port_source_sink_trace.h>
 
 /*
  * Port SOURCE
@@ -229,6 +230,7 @@ rte_port_source_create(void *params, int socket_id)
 		}
 	}
 
+    tracepoint(librte_port_source_sink, rte_port_source_create, port, p);
 	return port;
 }
 
@@ -248,6 +250,8 @@ rte_port_source_free(void *port)
 		rte_free(p->pkts);
 	if (p->pkt_buff)
 		rte_free(p->pkt_buff);
+
+    tracepoint(librte_port_source_sink, rte_port_source_free, port);
 
 	rte_free(p);
 
@@ -281,6 +285,7 @@ rte_port_source_rx(void *port, struct rte_mbuf **pkts, uint32_t n_pkts)
 
 	RTE_PORT_SOURCE_STATS_PKTS_IN_ADD(p, n_pkts);
 
+	tracepoint(librte_port_source_sink, rte_port_source_rx, port, n_pkts);
 	return n_pkts;
 }
 
@@ -484,6 +489,7 @@ rte_port_sink_create(void *params, int socket_id)
 		}
 	}
 
+	tracepoint(librte_port_source_sink, rte_port_sink_create, port, p);
 	return port;
 }
 
@@ -496,6 +502,8 @@ rte_port_sink_tx(void *port, struct rte_mbuf *pkt)
 	if (p->dumper != NULL)
 		PCAP_SINK_WRITE_PKT(p, pkt);
 	rte_pktmbuf_free(pkt);
+
+	tracepoint(librte_port_source_sink, rte_port_sink_tx, port, /* ONE packet */ 1);
 	RTE_PORT_SINK_STATS_PKTS_DROP_ADD(p, 1);
 
 	return 0;
@@ -510,6 +518,8 @@ rte_port_sink_tx_bulk(void *port, struct rte_mbuf **pkts,
 	if ((pkts_mask & (pkts_mask + 1)) == 0) {
 		uint64_t n_pkts = __builtin_popcountll(pkts_mask);
 		uint32_t i;
+
+		tracepoint(librte_port_source_sink, rte_port_sink_tx, port, n_pkts);
 
 		RTE_PORT_SINK_STATS_PKTS_IN_ADD(p, n_pkts);
 		RTE_PORT_SINK_STATS_PKTS_DROP_ADD(p, n_pkts);
@@ -526,6 +536,9 @@ rte_port_sink_tx_bulk(void *port, struct rte_mbuf **pkts,
 		}
 
 	} else {
+		tracepoint(librte_port_source_sink, rte_port_sink_tx, port,
+			__builtin_popcountll(pkts_mask));
+
 		if (p->dumper) {
 			uint64_t dump_pkts_mask = pkts_mask;
 			uint32_t pkt_index;
@@ -564,6 +577,7 @@ rte_port_sink_flush(void *port)
 
 	PCAP_SINK_FLUSH_PKT(p->dumper);
 
+	tracepoint(librte_port_source_sink, rte_port_sink_flush, port);
 	return 0;
 }
 
@@ -578,6 +592,7 @@ rte_port_sink_free(void *port)
 
 	PCAP_SINK_CLOSE(p->dumper);
 
+	tracepoint(librte_port_source_sink, rte_port_sink_free, port);
 	rte_free(p);
 
 	return 0;

@@ -13,4 +13,9 @@
 
 #include "rte_flow_classify_trace.h"
 
-#include "rte_eth_vhost_trace.h" 
+#include "rte_eth_vhost_trace.h"
+#include "rte_table_array_trace.h"
+#include "rte_pipeline_trace.h"
+#include "rte_port_ring_trace.h"
+#include "rte_port_ethdev_trace.h"
+#include "rte_port_source_sink_trace.h"
