@@ -15,6 +15,7 @@
 #include <rte_string_fns.h>
 
 #include "rte_pipeline.h"
+#include <rte_pipeline_trace.h>
 
 #define RTE_TABLE_INVALID                                 UINT32_MAX
 
@@ -227,6 +228,8 @@ rte_pipeline_create(struct rte_pipeline_params *params)
 	p->pkts_mask = 0;
 	p->n_pkts_ah_drop = 0;
 
+    tracepoint(librte_pipeline, rte_pipeline_create, p, p->name, p->socket_id, p->offset_port_id);
+
 	return p;
 }
 
@@ -262,6 +265,8 @@ rte_pipeline_free(struct rte_pipeline *p)
 
 		rte_pipeline_port_out_free(port);
 	}
+
+    tracepoint(librte_pipeline, rte_pipeline_free, p);
 
 	/* Free pipeline memory */
 	rte_free(p);
@@ -383,12 +388,17 @@ rte_pipeline_table_create(struct rte_pipeline *p,
 	table->table_next_id = 0;
 	table->table_next_id_valid = 0;
 
+	tracepoint(librte_pipeline, rte_pipeline_table_create, p, id, entry_size,
+	table->f_action_hit, table->f_action_miss, h_table);
+
 	return 0;
 }
 
 void
 rte_pipeline_table_free(struct rte_table *table)
 {
+	tracepoint(librte_pipeline, rte_pipeline_table_free, table->h_table);
+
 	if (table->ops.f_free != NULL)
 		table->ops.f_free(table->h_table);
 
@@ -442,6 +452,10 @@ rte_pipeline_table_default_entry_add(struct rte_pipeline *p,
 	memcpy(table->default_entry, default_entry, table->entry_size);
 
 	*default_entry_ptr = table->default_entry;
+
+	tracepoint(librte_pipeline, rte_pipeline_table_default_entry_add, p, table_id,
+		default_entry->action, default_entry->table_id);
+
 	return 0;
 }
 
@@ -474,6 +488,8 @@ rte_pipeline_table_default_entry_delete(struct rte_pipeline *p,
 	/* Clear the lookup miss actions */
 	memset(table->default_entry, 0, table->entry_size);
 	table->default_entry->action = RTE_PIPELINE_ACTION_DROP;
+
+	tracepoint(librte_pipeline, rte_pipeline_table_default_entry_delete, p, table_id);
 
 	return 0;
 }
@@ -533,10 +549,16 @@ rte_pipeline_table_entry_add(struct rte_pipeline *p,
 		(table->table_next_id_valid == 0)) {
 		table->table_next_id = entry->table_id;
 		table->table_next_id_valid = 1;
+
+		tracepoint(librte_pipeline, set_next_table_id, p, table_id, table->table_next_id);
 	}
 
-	return (table->ops.f_add)(table->h_table, key, (void *) entry,
+	int ret = (table->ops.f_add)(table->h_table, key, (void *) entry,
 		key_found, (void **) entry_ptr);
+
+	tracepoint(librte_pipeline, rte_pipeline_table_entry_add, p, table_id, entry, *entry_ptr, *key_found);
+
+	return ret;
 }
 
 int
@@ -842,12 +864,17 @@ rte_pipeline_port_in_create(struct rte_pipeline *p,
 	port->h_port = h_port;
 	port->next = NULL;
 
+	tracepoint(librte_pipeline, rte_pipeline_port_in_create, p, id, params->burst_size,
+		port->f_action, port->h_port);
+
 	return 0;
 }
 
 void
 rte_pipeline_port_in_free(struct rte_port_in *port)
 {
+	tracepoint(librte_pipeline, rte_pipeline_port_in_free, port->h_port);
+
 	if (port->ops.f_free != NULL)
 		port->ops.f_free(port->h_port);
 }
@@ -889,12 +916,17 @@ rte_pipeline_port_out_create(struct rte_pipeline *p,
 	/* Initialize port internal data structure */
 	port->h_port = h_port;
 
+	tracepoint(librte_pipeline, rte_pipeline_port_out_create, p, id, port->f_action,
+	port->h_port);
+
 	return 0;
 }
 
 void
 rte_pipeline_port_out_free(struct rte_port_out *port)
 {
+	tracepoint(librte_pipeline, rte_pipeline_port_out_free, port->h_port);
+
 	if (port->ops.f_free != NULL)
 		port->ops.f_free(port->h_port);
 }
@@ -929,6 +961,8 @@ rte_pipeline_port_in_connect_to_table(struct rte_pipeline *p,
 
 	port = &p->ports_in[port_id];
 	port->table_id = table_id;
+
+	tracepoint(librte_pipeline, rte_pipeline_port_in_connect_to_table, p, port_id, table_id);
 
 	return 0;
 }
@@ -976,6 +1010,8 @@ rte_pipeline_port_in_enable(struct rte_pipeline *p, uint32_t port_id)
 	/* Check if list of enabled ports was previously empty */
 	if (p->enabled_port_in_mask == port_mask)
 		p->port_in_next = port;
+
+    tracepoint(librte_pipeline, rte_pipeline_port_in_enable, p, port_id);
 
 	return 0;
 }
@@ -1028,6 +1064,8 @@ rte_pipeline_port_in_disable(struct rte_pipeline *p, uint32_t port_id)
 	/* Check if the port which has just been disabled is next to serve */
 	if (port == p->port_in_next)
 		p->port_in_next = port_next;
+
+    tracepoint(librte_pipeline, rte_pipeline_port_in_disable, p, port_id);
 
 	return 0;
 }
@@ -1127,6 +1165,9 @@ rte_pipeline_action_handler_port_bulk(struct rte_pipeline *p,
 	if (port_out->f_action != NULL) {
 		port_out->f_action(p, p->pkts, pkts_mask, port_out->arg_ah);
 
+		tracepoint(librte_pipeline, port_out_ah_drop, p,
+			port_id, p->n_pkts_ah_drop);
+
 		RTE_PIPELINE_STATS_AH_DROP_READ(p,
 			port_out->n_pkts_dropped_by_ah);
 	}
@@ -1164,6 +1205,9 @@ rte_pipeline_action_handler_port(struct rte_pipeline *p, uint64_t pkts_mask)
 					pkt_mask,
 					port_out->arg_ah);
 
+				tracepoint(librte_pipeline, port_out_ah_drop, p,
+					port_out_id, p->n_pkts_ah_drop);
+
 				RTE_PIPELINE_STATS_AH_DROP_READ(p,
 					port_out->n_pkts_dropped_by_ah);
 
@@ -1197,6 +1241,9 @@ rte_pipeline_action_handler_port(struct rte_pipeline *p, uint64_t pkts_mask)
 					p->pkts,
 					pkt_mask,
 					port_out->arg_ah);
+
+				tracepoint(librte_pipeline, port_out_ah_drop, p,
+					port_out_id, p->n_pkts_ah_drop);
 
 				RTE_PIPELINE_STATS_AH_DROP_READ(p,
 					port_out->n_pkts_dropped_by_ah);
@@ -1239,6 +1286,9 @@ rte_pipeline_action_handler_port_meta(struct rte_pipeline *p,
 					pkt_mask,
 					port_out->arg_ah);
 
+				tracepoint(librte_pipeline, port_out_ah_drop, p,
+					port_out_id, p->n_pkts_ah_drop);
+
 				RTE_PIPELINE_STATS_AH_DROP_READ(p,
 					port_out->n_pkts_dropped_by_ah);
 
@@ -1273,6 +1323,9 @@ rte_pipeline_action_handler_port_meta(struct rte_pipeline *p,
 					p->pkts,
 					pkt_mask,
 					port_out->arg_ah);
+
+				tracepoint(librte_pipeline, port_out_ah_drop, p,
+					port_out_id, p->n_pkts_ah_drop);
 
 				RTE_PIPELINE_STATS_AH_DROP_READ(p,
 					port_out->n_pkts_dropped_by_ah);
@@ -1336,6 +1389,9 @@ rte_pipeline_run(struct rte_pipeline *p)
 	if (port_in->f_action != NULL) {
 		port_in->f_action(p, p->pkts, n_pkts, port_in->arg_ah);
 
+		tracepoint(librte_pipeline, port_in_ah_drop, p,
+			(port_in - p->ports_in) /* port index */, p->n_pkts_ah_drop);
+
 		RTE_PIPELINE_STATS_AH_DROP_READ(p,
 			port_in->n_pkts_dropped_by_ah);
 	}
@@ -1366,6 +1422,9 @@ rte_pipeline_run(struct rte_pipeline *p)
 					default_entry,
 					table->arg_ah);
 
+				tracepoint(librte_pipeline, table_drop_by_lkp_miss_ah, p, table_id,
+					p->n_pkts_ah_drop);
+
 				RTE_PIPELINE_STATS_AH_DROP_READ(p,
 					table->n_pkts_dropped_by_lkp_miss_ah);
 			}
@@ -1382,6 +1441,11 @@ rte_pipeline_run(struct rte_pipeline *p)
 				RTE_PIPELINE_STATS_TABLE_DROP0(p);
 
 				p->action_mask0[pos] |= p->pkts_mask;
+
+				// Trigger an event if DROP is the default action of the table
+				if(pos == RTE_PIPELINE_ACTION_DROP)
+					tracepoint(librte_pipeline, table_drop_by_lkp_miss, p, table_id,
+						__builtin_popcountll(p->pkts_mask));
 
 				RTE_PIPELINE_STATS_TABLE_DROP1(p,
 					table->n_pkts_dropped_lkp_miss);
@@ -1400,12 +1464,21 @@ rte_pipeline_run(struct rte_pipeline *p)
 					p->entries,
 					table->arg_ah);
 
+				tracepoint(librte_pipeline, table_drop_by_lkp_hit_ah, p, table_id,
+					p->n_pkts_ah_drop);
+
 				RTE_PIPELINE_STATS_AH_DROP_READ(p,
 					table->n_pkts_dropped_by_lkp_hit_ah);
 			}
 
 			/* Table reserved actions */
 			RTE_PIPELINE_STATS_TABLE_DROP0(p);
+
+			tracepoint(librte_pipeline, table_drop_by_lkp_hit, p, table_id,
+				__builtin_popcountll(
+						p->action_mask1[RTE_PIPELINE_ACTION_DROP])
+					);
+
 			rte_pipeline_compute_masks(p, p->pkts_mask);
 			p->action_mask0[RTE_PIPELINE_ACTION_DROP] |=
 				p->action_mask1[
@@ -1426,6 +1499,11 @@ rte_pipeline_run(struct rte_pipeline *p)
 
 		/* Prepare for next iteration */
 		p->pkts_mask = p->action_mask0[RTE_PIPELINE_ACTION_TABLE];
+
+		tracepoint(librte_pipeline, forward_to_next_table, p,
+			(port_in - p->ports_in) /* port idx */, table_id, table->table_next_id,
+			__builtin_popcountll(p->pkts_mask));
+
 		table_id = table->table_next_id;
 		p->action_mask0[RTE_PIPELINE_ACTION_TABLE] = 0;
 	}
