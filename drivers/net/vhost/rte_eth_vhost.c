@@ -17,8 +17,6 @@
 #include <rte_spinlock.h>
 
 #include "rte_eth_vhost.h"
-
-#define TRACEPOINT_DEFINE
 #include "rte_eth_vhost_trace.h"
 
 static int vhost_logtype;

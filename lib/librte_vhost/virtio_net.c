@@ -20,8 +20,6 @@
 
 #include "iotlb.h"
 #include "vhost.h"
-
-#define TRACEPOINT_DEFINE
 #include "rte_vhost_trace.h"
 
 #define MAX_PKT_BURST 32
@@ -1346,7 +1344,7 @@ virtio_dev_tx_split(struct virtio_net *dev, struct vhost_virtqueue *vq,
 	count = RTE_MIN(count, MAX_PKT_BURST);
 	count = RTE_MIN(count, free_entries);
 	VHOST_LOG_DEBUG(VHOST_DATA, "(%d) about to dequeue %u buffers\n",
-			dev->vid, count);			
+			dev->vid, count);
 
 	for (i = 0; i < count; i++) {
 		struct buf_vector buf_vec[BUF_VECTOR_MAX];
@@ -1631,6 +1629,9 @@ out_access_unlock:
 		count += 1;
 	}
 
-	tracepoint(librte_vhost, dequeue_burst, dev->vid, vq, queue_id, count);
+	//We limit the emission of events since this function is continuously polled.
+	if(count > 0)
+		tracepoint(librte_vhost, dequeue_burst, dev->vid, vq, queue_id, count);
+
 	return count;
 }
