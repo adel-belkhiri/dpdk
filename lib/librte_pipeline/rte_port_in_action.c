@@ -11,6 +11,7 @@
 #include <rte_memcpy.h>
 
 #include "rte_port_in_action.h"
+#include <rte_pipeline_trace.h>
 
 /**
  * RTE_PORT_IN_ACTION_FLTR
@@ -214,6 +215,7 @@ rte_port_in_action_profile_create(uint32_t socket_id)
 	if (ap == NULL)
 		return NULL;
 
+	tracepoint(librte_pipeline, rte_port_in_action_profile_create, ap, socket_id);
 	return ap;
 }
 
@@ -253,6 +255,7 @@ rte_port_in_action_profile_action_register(struct rte_port_in_action_profile *pr
 	/* Action enable */
 	action_cfg_set(&profile->cfg, type, action_config);
 
+	trace_rte_port_in_action_profile_action_register(profile, action_config, type);
 	return 0;
 }
 
@@ -265,6 +268,7 @@ rte_port_in_action_profile_freeze(struct rte_port_in_action_profile *profile)
 	action_data_offset_set(&profile->data, &profile->cfg);
 	profile->frozen = 1;
 
+	tracepoint(librte_pipeline, rte_port_in_action_profile_freeze, profile);
 	return 0;
 }
 
@@ -274,6 +278,7 @@ rte_port_in_action_profile_free(struct rte_port_in_action_profile *profile)
 	if (profile == NULL)
 		return 0;
 
+	tracepoint(librte_pipeline, rte_port_in_action_profile_free, profile);
 	free(profile);
 	return 0;
 }
@@ -349,6 +354,7 @@ rte_port_in_action_create(struct rte_port_in_action_profile *profile,
 			action_data_init(action,
 				(enum rte_port_in_action_type)i);
 
+	tracepoint(librte_pipeline, rte_port_in_action_create, profile, action);
 	return action;
 }
 
@@ -358,6 +364,7 @@ rte_port_in_action_apply(struct rte_port_in_action *action,
 	void *action_params)
 {
 	void *action_data;
+	int ret;
 
 	/* Check input arguments */
 	if ((action == NULL) ||
@@ -371,12 +378,20 @@ rte_port_in_action_apply(struct rte_port_in_action *action,
 
 	switch (type) {
 	case RTE_PORT_IN_ACTION_FLTR:
-		return fltr_apply(action_data,
+		ret = fltr_apply(action_data,
 			action_params);
 
+		tracepoint(librte_pipeline, rte_port_in_action_fltr_apply, action,
+			((struct rte_port_in_action_fltr_params*) action_params)->port_id);
+		return ret;
+
 	case RTE_PORT_IN_ACTION_LB:
-		return lb_apply(action_data,
+		ret = lb_apply(action_data,
 			action_params);
+
+		tracepoint(librte_pipeline, rte_port_in_action_lb_apply, action,
+			((struct rte_port_in_action_lb_params*) action_params)->port_id);
+		return ret;
 
 	default:
 		return -EINVAL;
@@ -527,5 +542,6 @@ rte_port_in_action_free(struct rte_port_in_action *action)
 
 	rte_free(action);
 
+    tracepoint(librte_pipeline, rte_port_in_action_free, action);
 	return 0;
 }
