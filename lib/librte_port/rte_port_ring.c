@@ -9,6 +9,7 @@
 #include <rte_malloc.h>
 
 #include "rte_port_ring.h"
+#include "rte_port_ring_trace.h"
 
 /*
  * Port RING Reader
@@ -61,6 +62,7 @@ rte_port_ring_reader_create_internal(void *params, int socket_id,
 	/* Initialization */
 	port->ring = conf->ring;
 
+	tracepoint(librte_port_ring, rte_port_ring_reader_create, port, conf);
 	return port;
 }
 
@@ -85,6 +87,11 @@ rte_port_ring_reader_rx(void *port, struct rte_mbuf **pkts, uint32_t n_pkts)
 	nb_rx = rte_ring_sc_dequeue_burst(p->ring, (void **) pkts,
 			n_pkts, NULL);
 	RTE_PORT_RING_READER_STATS_PKTS_IN_ADD(p, nb_rx);
+
+	/* function executed in polling mode. We limit then the events generation
+	to significant occurances */
+	if(nb_rx)
+		tracepoint(librte_port_ring, rte_port_ring_reader_rx, p, n_pkts, nb_rx);
 
 	return nb_rx;
 }
@@ -111,6 +118,7 @@ rte_port_ring_reader_free(void *port)
 		return -EINVAL;
 	}
 
+	tracepoint(librte_port_ring, rte_port_ring_reader_free, port);
 	rte_free(port);
 
 	return 0;
@@ -193,6 +201,7 @@ rte_port_ring_writer_create_internal(void *params, int socket_id,
 	port->bsz_mask = 1LLU << (conf->tx_burst_sz - 1);
 	port->is_multi = is_multi;
 
+    tracepoint(librte_port_ring, rte_port_ring_writer_create, port,  conf);
 	return port;
 }
 
@@ -220,6 +229,8 @@ send_burst(struct rte_port_ring_writer *p)
 	for ( ; nb_tx < p->tx_buf_count; nb_tx++)
 		rte_pktmbuf_free(p->tx_buf[nb_tx]);
 
+	tracepoint(librte_port_ring, send_burst, p, nb_tx, p->tx_buf_count);
+
 	p->tx_buf_count = 0;
 }
 
@@ -245,6 +256,9 @@ rte_port_ring_writer_tx(void *port, struct rte_mbuf *pkt)
 
 	p->tx_buf[p->tx_buf_count++] = pkt;
 	RTE_PORT_RING_WRITER_STATS_PKTS_IN_ADD(p, 1);
+
+	tracepoint(librte_port_ring, rte_port_ring_writer_tx, port, p->tx_buf_count);
+
 	if (p->tx_buf_count >= p->tx_burst_sz)
 		send_burst(p);
 
@@ -378,6 +392,8 @@ rte_port_ring_writer_free(void *port)
 		rte_port_ring_multi_writer_flush(port);
 	else
 		rte_port_ring_writer_flush(port);
+
+    tracepoint(librte_port_ring, rte_port_ring_writer_free, port);
 
 	rte_free(port);
 
