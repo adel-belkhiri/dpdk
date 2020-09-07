@@ -12,6 +12,7 @@
 #include <rte_log.h>
 
 #include "rte_table_array.h"
+#include "rte_table_array_trace.h"
 
 #ifdef RTE_TABLE_STATS_COLLECT
 
@@ -75,6 +76,8 @@ rte_table_array_create(void *params, int socket_id, uint32_t entry_size)
 	t->offset = p->offset;
 	t->entry_pos_mask = t->n_entries - 1;
 
+	tracepoint(librte_table_array, rte_table_array_create, t, t->entry_size,
+		t->n_entries, t->offset);
 	return t;
 }
 
@@ -88,6 +91,8 @@ rte_table_array_free(void *table)
 		RTE_LOG(ERR, TABLE, "%s: table parameter is NULL\n", __func__);
 		return -EINVAL;
 	}
+
+	tracepoint(librte_table_array, rte_table_array_free, t);
 
 	/* Free previously allocated resources */
 	rte_free(t);
@@ -136,6 +141,8 @@ rte_table_array_entry_add(
 	*key_found = 1;
 	*entry_ptr = (void *) table_entry;
 
+	tracepoint(librte_table_array, rte_table_array_entry_add, t, k->pos,
+		*entry_ptr, *key_found);
 	return 0;
 }
 
@@ -178,6 +185,8 @@ rte_table_array_lookup(
 		}
 	}
 
+	tracepoint(librte_table_array, rte_table_array_lookup, t, n_pkts_in,
+		*lookup_hit_mask, entries);
 	return 0;
 }
 
