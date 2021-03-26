@@ -31,6 +31,7 @@
 #include <rte_string_fns.h>
 #include <rte_spinlock.h>
 #include <rte_tailq.h>
+//#include <rte_ring_trace.h>
 
 #include "rte_ring.h"
 
@@ -179,6 +180,7 @@ rte_ring_create(const char *name, unsigned count, int socket_id,
 	}
 	rte_mcfg_tailq_write_unlock();
 
+	//tracepoint(librte_ring_xx, rte_ring_create, r, mz_name, count, socket_id);
 	return r;
 }
 
@@ -224,6 +226,8 @@ rte_ring_free(struct rte_ring *r)
 	TAILQ_REMOVE(ring_list, te, next);
 
 	rte_mcfg_tailq_write_unlock();
+
+	//tracepoint(librte_ring_xx, rte_ring_free, r);
 
 	rte_free(te);
 }

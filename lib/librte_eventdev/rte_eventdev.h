@@ -214,6 +214,7 @@ extern "C" {
 #include <rte_config.h>
 #include <rte_memory.h>
 #include <rte_errno.h>
+#include <rte_eventdev_header_trace.h>
 
 struct rte_mbuf; /* we just use mbuf pointers; no need to include rte_mbuf.h */
 struct rte_event;
@@ -1315,6 +1316,7 @@ __rte_event_enqueue_burst(uint8_t dev_id, uint8_t port_id,
 			const event_enqueue_burst_t fn)
 {
 	const struct rte_eventdev *dev = &rte_eventdevs[dev_id];
+	uint16_t ret;
 
 #ifdef RTE_LIBRTE_EVENTDEV_DEBUG
 	if (dev_id >= RTE_EVENT_MAX_DEVS || !rte_eventdevs[dev_id].attached) {
@@ -1332,9 +1334,12 @@ __rte_event_enqueue_burst(uint8_t dev_id, uint8_t port_id,
 	 * requests nb_events as const one
 	 */
 	if (nb_events == 1)
-		return (*dev->enqueue)(dev->data->ports[port_id], ev);
+		ret = (*dev->enqueue)(dev->data->ports[port_id], ev);
 	else
-		return fn(dev->data->ports[port_id], ev, nb_events);
+		ret = fn(dev->data->ports[port_id], ev, nb_events);
+
+	tracepoint(librte_eventdev, rte_event_enqueue_burst, dev_id, port_id, nb_events, ret);
+	return ret;
 }
 
 /**
@@ -1592,6 +1597,7 @@ rte_event_dequeue_burst(uint8_t dev_id, uint8_t port_id, struct rte_event ev[],
 			uint16_t nb_events, uint64_t timeout_ticks)
 {
 	struct rte_eventdev *dev = &rte_eventdevs[dev_id];
+	uint16_t ret;
 
 #ifdef RTE_LIBRTE_EVENTDEV_DEBUG
 	if (dev_id >= RTE_EVENT_MAX_DEVS || !rte_eventdevs[dev_id].attached) {
@@ -1610,12 +1616,18 @@ rte_event_dequeue_burst(uint8_t dev_id, uint8_t port_id, struct rte_event ev[],
 	 * requests nb_events as const one
 	 */
 	if (nb_events == 1)
-		return (*dev->dequeue)(
+		ret = (*dev->dequeue)(
 			dev->data->ports[port_id], ev, timeout_ticks);
 	else
-		return (*dev->dequeue_burst)(
+		ret = (*dev->dequeue_burst)(
 			dev->data->ports[port_id], ev, nb_events,
 				timeout_ticks);
+
+	if(ret > 0)
+		tracepoint(librte_eventdev, rte_event_dequeue_burst, dev_id, port_id, nb_events,
+		timeout_ticks, ret);
+
+	return ret;
 }
 
 /**

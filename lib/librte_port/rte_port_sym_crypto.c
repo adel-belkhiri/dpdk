@@ -7,6 +7,7 @@
 #include <rte_malloc.h>
 
 #include "rte_port_sym_crypto.h"
+#include <rte_port_sym_crypto_trace.h>
 
 /*
  * Port Crypto Reader
@@ -62,6 +63,8 @@ rte_port_sym_crypto_reader_create(void *params, int socket_id)
 	port->f_callback = conf->f_callback;
 	port->arg_callback = conf->arg_callback;
 
+    tracepoint(librte_port_sym_crypto, rte_port_sym_crypto_reader_create, port, port->cryptodev_id, port->queue_id);
+
 	return port;
 }
 
@@ -93,6 +96,11 @@ rte_port_sym_crypto_reader_rx(void *port, struct rte_mbuf **pkts, uint32_t n_pkt
 	RTE_PORT_SYM_CRYPTO_READER_STATS_PKTS_IN_ADD(p, n);
 	RTE_PORT_SYM_CRYPTO_READER_STATS_PKTS_DROP_ADD(p, rx_ops_cnt - n);
 
+	if(likely(rx_ops_cnt == 0))
+		p->stats.zero_polls++;
+	else
+    	tracepoint(librte_port_sym_crypto, rte_port_sym_crypto_reader_rx, port, n_pkts, n, rx_ops_cnt - n, p->stats.zero_polls);
+
 	return n;
 }
 
@@ -105,6 +113,8 @@ rte_port_sym_crypto_reader_free(void *port)
 	}
 
 	rte_free(port);
+
+	tracepoint(librte_port_sym_crypto, rte_port_sym_crypto_reader_free, port);
 
 	return 0;
 }
@@ -188,6 +198,9 @@ rte_port_sym_crypto_writer_create(void *params, int socket_id)
 	port->queue_id = conf->queue_id;
 	port->crypto_op_offset = conf->crypto_op_offset;
 
+    tracepoint(librte_port_sym_crypto, rte_port_sym_crypto_writer_create, port, port->cryptodev_id,
+		port->queue_id, port->tx_burst_sz);
+
 	return port;
 }
 
@@ -198,6 +211,8 @@ send_burst(struct rte_port_sym_crypto_writer *p)
 
 	nb_tx = rte_cryptodev_enqueue_burst(p->cryptodev_id, p->queue_id,
 			p->tx_buf, p->tx_buf_count);
+
+    tracepoint(librte_port_sym_crypto, send_burst, p, nb_tx, p->tx_buf_count);
 
 	RTE_PORT_SYM_CRYPTO_WRITER_STATS_PKTS_DROP_ADD(p, p->tx_buf_count -
 			nb_tx);
@@ -218,6 +233,8 @@ rte_port_sym_crypto_writer_tx(void *port, struct rte_mbuf *pkt)
 	RTE_PORT_SYM_CRYPTO_WRITER_STATS_PKTS_IN_ADD(p, 1);
 	if (p->tx_buf_count >= p->tx_burst_sz)
 		send_burst(p);
+
+	tracepoint(librte_port_sym_crypto, rte_port_sym_crypto_writer_tx, port);
 
 	return 0;
 }
@@ -291,6 +308,8 @@ rte_port_sym_crypto_writer_free(void *port)
 
 	rte_port_sym_crypto_writer_flush(port);
 	rte_free(port);
+
+    tracepoint(librte_port_sym_crypto, rte_port_sym_crypto_writer_free, port);
 
 	return 0;
 }

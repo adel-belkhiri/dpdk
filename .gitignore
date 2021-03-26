@@ -2,6 +2,8 @@
 .*
 
 # ignore generated documentation tables
+#
+doc/**
 doc/guides/nics/overview_table.txt
 doc/guides/cryptodevs/overview_feature_table.txt
 doc/guides/cryptodevs/overview_cipher_table.txt

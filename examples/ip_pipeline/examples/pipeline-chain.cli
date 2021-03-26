@@ -1,0 +1,87 @@
+; SPDX-License-Identifier: BSD-3-Clause
+; Copyright(c) 2010-2018 Intel Corporation
+
+;                 _______________
+; LINK0 RXQ0 --->|               |---> LINK0 TXQ0
+;                |               |
+; LINK1 RXQ0 --->|               |---> LINK1 TXQ0
+;                |   Firewall    |
+; LINK2 RXQ0 --->|               |---> LINK2 TXQ0
+;                |               |
+; LINK3 RXQ0 --->|               |---> LINK3 TXQ0
+;                |_______________|
+;                        |
+;                       -+-
+;
+; Input packet: Ethernet/IPv4
+;
+; Packet buffer layout:
+; #   Field Name            Offset (Bytes)      Size (Bytes)
+; 0   Mbuf                  0                   128
+; 1   Headroom              128                 128
+; 2   Ethernet header       256                 14
+; 3   IPv4 header           270                 20
+
+mempool MEMPOOL0 buffer 2304 pool 32K cache 256 cpu 0
+
+link LINK0 dev net_vhost0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK1 dev net_vhost1 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK2 dev net_vhost2 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+;;;link LINK3 dev net_vhost3 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+
+swq  SWQ0  size  4096  cpu 0
+swq  SWQ1  size  4096  cpu 0
+
+table action profile AP0 ipv4 offset 270 fwd
+table action profile APNH ipv4 offset 270 fwd encap ether
+
+pipeline PIPELINE_A period 10 offset_port_id 0 cpu 0
+pipeline PIPELINE_B period 10 offset_port_id 0 cpu 0
+pipeline PIPELINE_C period 10 offset_port_id 0 cpu 0
+
+port in action profile PORT_IN_PRO filter match offset 286 mask FFFFFFFF000000000000000000000000 key 64400003000000000000000000000000 port 1
+
+pipeline PIPELINE_A port in bsz 32 link LINK0 rxq 0 action PORT_IN_PRO
+pipeline PIPELINE_A port out bsz 32 swq SWQ0
+pipeline PIPELINE_A port out bsz 32 sink file /home/adel/pipe-chaine-file.pcap pkts 0
+
+;;;pipeline PIPELINE_A port out bsz 32 link LINK3 txq 0
+
+pipeline PIPELINE_B port in bsz 32 link LINK2 rxq 0
+pipeline PIPELINE_B port out bsz 32 swq SWQ0
+
+
+pipeline PIPELINE_C port in bsz 32 swq SWQ0
+;;pipeline PIPELINE_C port out bsz 32 link LINK1 txq 0
+pipeline PIPELINE_C port out bsz 32 sink file /home/adel/pipeline-c-file.pcap pkts 0
+
+pipeline PIPELINE_A table match acl ipv4 offset 270 size 4K action AP0
+pipeline PIPELINE_A table match acl ipv4 offset 270 size 4K action AP0
+
+pipeline PIPELINE_B table match acl ipv4 offset 270 size 4K action AP0
+pipeline PIPELINE_C table match acl ipv4 offset 270 size 4K action AP0
+
+
+pipeline PIPELINE_A port in 0 table 0
+pipeline PIPELINE_B port in 0 table 0
+pipeline PIPELINE_C port in 0 table 0
+
+thread 1 pipeline PIPELINE_A enable
+thread 1 pipeline PIPELINE_B enable
+thread 1 pipeline PIPELINE_C enable
+
+pipeline PIPELINE_A table 0 rule add match default action fwd drop
+pipeline PIPELINE_A table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 100.0.0.0 10 0 65535 0 65535 17 action fwd table 1
+pipeline PIPELINE_A table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 100.64.0.0 10 0 65535 0 65535 17 action fwd port 0
+
+pipeline PIPELINE_A table 1 rule add match default action fwd drop
+;;;pipeline PIPELINE_A table 1 rule add match array 0 action fwd port 1 encap ether a0:a1:a2:a3:a4:a5 56:48:4f:53:54:02
+
+pipeline PIPELINE_B table 0 rule add match default action fwd drop
+pipeline PIPELINE_B table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 192.168.0.0 24 0 65535 0 65535 17 action fwd port 0
+pipeline PIPELINE_B table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 192.168.1.0 24 0 65535 0 65535 17 action fwd port 0
+
+pipeline PIPELINE_C table 0 rule add match default action fwd drop
+pipeline PIPELINE_C table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 100.0.0.0 24 0 65535 0 65535 17 action fwd port 0
+pipeline PIPELINE_C table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 100.64.0.0 24 0 65535 0 65535 17 action fwd port 0
+;;;pipeline PIPELINE_C table 0 rule add match acl priority 0 ipv4 0.0.0.0 0 0.0.0.0 0 0 65535 11 65535 17 action fwd drop

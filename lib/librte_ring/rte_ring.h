@@ -48,6 +48,7 @@ extern "C" {
 #include <rte_branch_prediction.h>
 #include <rte_memzone.h>
 #include <rte_pause.h>
+//#include <rte_ring_trace.h>
 
 #define RTE_TAILQ_RING_NAME "RTE_RING"
 
@@ -350,6 +351,8 @@ __rte_ring_do_enqueue(struct rte_ring *r, void * const *obj_table,
 end:
 	if (free_space != NULL)
 		*free_space = free_entries - n;
+
+	//tracepoint(librte_ring, rte_ring_enqueue, r, n, free_entries - n);
 	return n;
 }
 
@@ -393,6 +396,8 @@ __rte_ring_do_dequeue(struct rte_ring *r, void **obj_table,
 end:
 	if (available != NULL)
 		*available = entries - n;
+
+	//tracepoint(librte_ring, rte_ring_dequeue, r, n, entries - n);
 	return n;
 }
 

@@ -1,0 +1,10 @@
+# Ipv6 packet match destination ipv6 address 2002:0db8:85a3:08d3:1319:8a2e:0370:7344/128 will be dropped:
+@2001:0db8:85a3:08d3:1319:8a2e:0370:7344/128 0:0:0:0:0:0:0:0/0 0 : 65535 0 : 65535 0/0
+
+# Ipv6 packet match source port 11 will be dropped
+@0:0:0:0:0:0:0:0/0 0:0:0:0:0:0:0:0/0 11 : 11 0 : 65535 0/0
+
+# Ipv6 packet match protocol TCP will be dropped:
+@0:0:0:0:0:0:0:0/0 0:0:0:0:0:0:0:0/0 0 : 65535 0 : 65535 6/0xff
+
+R0:0:0:0:0:0:0:0/0 0:0:0:0:0:0:0:0/0 0 : 65535 0 : 65535 0x00/0x00 1

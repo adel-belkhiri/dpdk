@@ -6,6 +6,7 @@
 #include <rte_cycles.h>
 #include <rte_event_ring.h>
 
+#include <rte_event_sw_trace.h>
 #include "sw_evdev.h"
 
 #define PORT_ENQUEUE_MAX_BURST_SIZE 64
@@ -128,6 +129,9 @@ sw_event_enqueue_burst(void *port, const struct rte_event ev[], uint16_t num)
 		p->inflight_credits -= credit_update_quanta;
 	}
 
+	tracepoint(sw_eventdev, sw_event_enqueue_burst, sw, p->id, rte_atomic32_read(&sw->inflights),
+		p->inflight_credits, p->outstanding_releases, num, enq, new);
+
 	return enq;
 }
 
@@ -174,6 +178,9 @@ sw_event_dequeue_burst(void *port, struct rte_event *ev, uint16_t num,
 	p->last_dequeue_ticks = rte_get_timer_cycles();
 	p->poll_buckets[(ndeq - 1) >> SW_DEQ_STAT_BUCKET_SHIFT]++;
 	p->total_polls++;
+
+	tracepoint(sw_eventdev, sw_event_dequeue_burst, p->sw, p->id, rte_atomic32_read(&p->sw->inflights),
+		p->inflight_credits, p->outstanding_releases, num, ndeq);
 
 end:
 	return ndeq;

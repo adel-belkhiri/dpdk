@@ -61,14 +61,12 @@ TRACEPOINT_EVENT(
     TP_ARGS(
         void*, f,
         void*, arg,
-        unsigned int, lcore_id,
-        int, rc
+        unsigned int, lcore_id
     ),
     TP_FIELDS(
         ctf_integer_hex(void*, f, f)
         ctf_integer_hex(void*, arg, arg)
         ctf_integer(unsigned int, lcore_id, lcore_id)
-        ctf_integer(int, rc, rc)
     )
 )
 
@@ -105,40 +103,61 @@ TRACEPOINT_EVENT(
     TP_FIELDS(
         ctf_integer(unsigned int, lcore_id, lcore_id)
         ctf_integer_hex(void*, f, f)
-        ctf_integer_hex(void*, arg, arg)        
+        ctf_integer_hex(void*, arg, arg)
     )
 )
 
 /**
  * An lcore finished the execution of a task.
- * State of an lcore.
+ * State of an lcore can be either WAITING or FINISHED
  * enum rte_lcore_state_t {
- *	WAIT,       < waiting a new command >
- *	RUNNING,    < executing command >
- *	FINISHED,   < command executed >
- * }; 
+ *	    WAIT,       < waiting a new command
+ *	    RUNNING,    < executing command
+ *	    FINISHED,   < command executed
+ * };
+ *
+ * @p ret: executed function return
  */
 TRACEPOINT_EVENT(
     librte_eal,
-    thread_lcore_waiting,
+    thread_lcore_stopped,
     TP_ARGS(
         unsigned int, lcore_id,
-        int, ret,
-        uint8_t, status
+        uint8_t, status,
+        int, ret
     ),
     TP_FIELDS(
         ctf_integer(unsigned int, lcore_id, lcore_id)
-        ctf_integer(int, ret, ret)        
         ctf_integer(uint8_t, status, status)
+        ctf_integer(int, ret, ret)
     )
 )
 
 
+/**
+ * Indicates a change in the role of an lcore
+ *
+ *  ROLE_RTE <= 0
+ *	ROLE_OFF <= 1
+ *	ROLE_SERVICE <= 2
+ */
+TRACEPOINT_EVENT(
+    librte_eal,
+    lcore_role_change,
+    TP_ARGS(
+        int32_t, lcore_id,
+        uint32_t, lcore_role
+    ),
+    TP_FIELDS(
+        ctf_integer(int32_t, lcore_id, lcore_id)
+        ctf_integer(int32_t, lcore_role, lcore_role)
+    )
+)
 /******************************************/
 /*          Services tracepoints          */
 /******************************************/
 /**
- * Indicates the registration of a service 
+ * Indicates the registration of a service
  */
 TRACEPOINT_EVENT(
     librte_eal,
@@ -150,10 +169,10 @@ TRACEPOINT_EVENT(
         void*, arg
     ),
     TP_FIELDS(
-        ctf_integer(int32_t, id, id)        
+        ctf_integer(int32_t, id, id)
         ctf_string(service_name, service_name)
-        ctf_integer_hex(void*, cb, cb)    
-        ctf_integer_hex(void*, arg, arg)    
+        ctf_integer_hex(void*, cb, cb)
+        ctf_integer_hex(void*, arg, arg)
     )
 )
 
@@ -164,45 +183,10 @@ TRACEPOINT_EVENT(
     librte_eal,
     service_component_unregister,
     TP_ARGS(
-        int32_t, id,        
-        const char*, service_name
-
+        uint32_t, id
     ),
     TP_FIELDS(
-        ctf_integer(int32_t, id, id)        
-        ctf_string(service_name, service_name)  
-    )
-)
-
-/**
- * Indicates that a service started running
- */ 
-TRACEPOINT_EVENT(
-    librte_eal,
-    service_run_begin,
-    TP_ARGS(
-        int32_t, id,
-        int32_t, lcore_id     
-    ),
-    TP_FIELDS(
-        ctf_integer(int32_t, id, id)        
-        ctf_integer(int32_t, lcore_id, lcore_id)  
-    )
-)
-
-/**
- * Indicates that a service started waiting to run again
- */ 
-TRACEPOINT_EVENT(
-    librte_eal,
-    service_run_end,
-    TP_ARGS(
-        int32_t, id,
-        int32_t, lcore_id     
-    ),
-    TP_FIELDS(
-        ctf_integer(int32_t, id, id)        
-        ctf_integer(int32_t, lcore_id, lcore_id)  
+        ctf_integer(uint32_t, id, id)
     )
 )
 
@@ -213,49 +197,95 @@ TRACEPOINT_EVENT(
     librte_eal,
     service_map_lcore,
     TP_ARGS(
-        int32_t, id,
-        int32_t, lcore_id,
+        uint32_t, id,
+        uint32_t, lcore_id,
         uint32_t, enabled
     ),
     TP_FIELDS(
-        ctf_integer(int32_t, id, id)        
-        ctf_integer(int32_t, lcore_id, lcore_id)  
-        ctf_integer(int32_t, enabled, enabled)                
+        ctf_integer(uint32_t, id, id)
+        ctf_integer(uint32_t, lcore_id, lcore_id)
+        ctf_integer(uint32_t, enabled, enabled)
     )
 )
 
 /**
- * Indicates a change in the role of an lcore
- * 
- *  ROLE_RTE <= 0
- *	ROLE_OFF <= 1
- *	ROLE_SERVICE <= 2
+ * Run a service single iteration on a non-service lcore
  */
 TRACEPOINT_EVENT(
     librte_eal,
-    lcore_role_change,
+    service_run_iter_on_app_lcore,
     TP_ARGS(
-        int32_t, lcore_id,
-        uint32_t, lcore_role  
+        uint32_t, id,
+        unsigned int, lcore_id
     ),
-    TP_FIELDS(  
-        ctf_integer(int32_t, lcore_id, lcore_id)  
-        ctf_integer(int32_t, lcore_role, lcore_role)                 
+    TP_FIELDS(
+        ctf_integer(uint32_t, id, id)
+        ctf_integer(unsigned int, lcore_id, lcore_id)
     )
 )
 
-
 /**
- * lcore started being ready to run services
+ * Indicates that a service started running
  */
 TRACEPOINT_EVENT(
     librte_eal,
-    service_lcore_ready,
+    service_run_begin,
     TP_ARGS(
-        int32_t, lcore_id 
+        int32_t, id,
+        int32_t, lcore_id
     ),
-    TP_FIELDS(  
-        ctf_integer(int32_t, lcore_id, lcore_id)                  
+    TP_FIELDS(
+        ctf_integer(int32_t, id, id)
+        ctf_integer(int32_t, lcore_id, lcore_id)
+    )
+)
+
+/**
+ * Indicates that a service started waiting to run again
+ */
+TRACEPOINT_EVENT(
+    librte_eal,
+    service_run_end,
+    TP_ARGS(
+        uint32_t, id,
+        int, lcore_id
+    ),
+    TP_FIELDS(
+        ctf_integer(uint32_t, id, id)
+        ctf_integer(int, lcore_id, lcore_id)
+    )
+)
+
+/**
+ * lcore schedule the function to run the service
+ */
+TRACEPOINT_EVENT(
+    librte_eal,
+    service_lcore_start,
+    TP_ARGS(
+        uint32_t, lcore_id
+    ),
+    TP_FIELDS(
+        ctf_integer(uint32_t, lcore_id, lcore_id)
+    )
+)
+
+/**
+ * Sets the service to running/stopped state.
+ *
+ * @p id: service id
+ * @p runstate: run state (running/1, stopped/0)
+ */
+TRACEPOINT_EVENT(
+    librte_eal,
+    service_runstate_set,
+    TP_ARGS(
+        uint32_t, id,
+        uint32_t, runstate
+    ),
+    TP_FIELDS(
+        ctf_integer(uint32_t, id, id)
+        ctf_integer(uint32_t, runstate, runstate)
     )
 )
 
@@ -266,10 +296,10 @@ TRACEPOINT_EVENT(
     librte_eal,
     service_lcore_stop,
     TP_ARGS(
-        int32_t, lcore_id
+        uint32_t, lcore_id
     ),
-    TP_FIELDS(  
-        ctf_integer(int32_t, lcore_id, lcore_id)                 
+    TP_FIELDS(
+        ctf_integer(uint32_t, lcore_id, lcore_id)
     )
 )
 #endif /* _RTE_EAL_COMMON_TRACE_H */

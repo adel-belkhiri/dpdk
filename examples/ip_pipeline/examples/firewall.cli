@@ -24,10 +24,10 @@
 
 mempool MEMPOOL0 buffer 2304 pool 32K cache 256 cpu 0
 
-link LINK0 dev 0000:02:00.0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
-link LINK1 dev 0000:02:00.1 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
-link LINK2 dev 0000:06:00.0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
-link LINK3 dev 0000:06:00.1 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK0 dev net_vhost0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK1 dev net_vhost1 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK2 dev net_vhost2 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK3 dev net_vhost3 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
 
 table action profile AP0 ipv4 offset 270 fwd
 

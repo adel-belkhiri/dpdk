@@ -14,6 +14,7 @@
 /**
  * Create a port ring reader
  * @p flags: Flags supplied at creation
+ * @p ring : pointer on the ring structure
  * @p size: Size of ring
  * @p capacity:  Usable size of ring
  */
@@ -30,6 +31,7 @@ TRACEPOINT_EVENT(
         ctf_integer(int, flags, conf->ring->flags)
         ctf_integer(uint32_t, size, conf->ring->size)
         ctf_integer(uint32_t, capacity, conf->ring->capacity)
+        ctf_integer_hex(const void*, ring, conf->ring)
     )
 )
 
@@ -42,12 +44,14 @@ TRACEPOINT_EVENT(
     TP_ARGS(
         const void*, port,
         uint32_t, nb_pkts,
-        uint32_t, rx_pkt_cnt
+        uint32_t, rx_pkt_cnt,
+        uint64_t, zero_polls
     ),
     TP_FIELDS(
         ctf_integer_hex(const void*, port, port)
         ctf_integer(uint32_t, nb_pkts, nb_pkts)
         ctf_integer(uint32_t, rx_pkt_cnt, rx_pkt_cnt)
+        ctf_integer(uint64_t, zero_polls, zero_polls)
     )
 )
 
@@ -87,6 +91,7 @@ TRACEPOINT_EVENT(
         ctf_integer(uint32_t, size, conf->ring->size)
         ctf_integer(uint32_t, capacity, conf->ring->capacity)
         ctf_integer(uint32_t, tx_burst_sz, conf->tx_burst_sz)
+        ctf_integer_hex(const void*, ring, conf->ring)
     )
 )
 
@@ -112,6 +117,28 @@ TRACEPOINT_EVENT(
     )
 )
 
+ /**
+ *  Enqueue a burst of packets in the port ring.
+ *
+ * @p tx_buf_count: Number of packets to enqueue in the ring
+ * @p tx_pkt_cnt: Actual number of objects enqueued. If nb_tx < tx_buf_count the remaining
+ * packets are simply deleted
+ */
+TRACEPOINT_EVENT(
+    librte_port_ring,
+    send_burst_mp,
+    TP_ARGS(
+        const void*, port,
+        uint32_t, tx_pkt_cnt,
+        uint32_t, tx_buf_count
+    ),
+    TP_FIELDS(
+        ctf_integer_hex(const void*, port, port)
+        ctf_integer(uint32_t, tx_pkt_cnt, tx_pkt_cnt)
+        ctf_integer(uint32_t, tx_buf_count, tx_buf_count)
+    )
+)
+
 /**
  * Write a packet to the port ring. If the number of written packets (tx_buf_count) exceeded
  * the value port->tx_burst_sz, then a send_burst is executed
@@ -120,12 +147,31 @@ TRACEPOINT_EVENT(
     librte_port_ring,
     rte_port_ring_writer_tx,
     TP_ARGS(
-        const void*, port,
-        uint32_t, tx_buf_count
+        const void*, port
     ),
     TP_FIELDS(
         ctf_integer_hex(const void*, port, port)
-        ctf_integer(uint32_t, tx_buf_count, tx_buf_count)
+    )
+)
+
+/**
+ * Write a bulk of packet to the port ring.
+ *
+ * @p n_pkts: number of packets to send
+ * @p tx_n_pkts: number of packet that are sent
+ */
+TRACEPOINT_EVENT(
+    librte_port_ring,
+    rte_port_ring_writer_tx_bulk,
+    TP_ARGS(
+        const void*, port,
+        uint32_t, n_pkts,
+        uint32_t, tx_n_pkts
+    ),
+    TP_FIELDS(
+        ctf_integer_hex(const void*, port, port)
+        ctf_integer(uint32_t, n_pkts, n_pkts)
+        ctf_integer(uint32_t, tx_n_pkts, tx_n_pkts)
     )
 )
 /**

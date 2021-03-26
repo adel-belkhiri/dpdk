@@ -60,7 +60,7 @@ rte_port_ethdev_reader_create(void *params, int socket_id)
 	port->port_id = conf->port_id;
 	port->queue_id = conf->queue_id;
 
-    tracepoint(librte_port_ethdev,  rte_port_ethdev_reader_create, port, conf);
+    tracepoint(librte_port_ethdev,  rte_port_ethdev_reader_create, port, port->port_id, port->queue_id);
 
 	return port;
 }
@@ -74,10 +74,13 @@ rte_port_ethdev_reader_rx(void *port, struct rte_mbuf **pkts, uint32_t n_pkts)
 
 	rx_pkt_cnt = rte_eth_rx_burst(p->port_id, p->queue_id, pkts, n_pkts);
 	RTE_PORT_ETHDEV_READER_STATS_PKTS_IN_ADD(p, rx_pkt_cnt);
+
 	/* function executed in polling mode. We limit then the events generation
 	to significant occurances */
-	if(rx_pkt_cnt)
-		tracepoint(librte_port_ethdev, rte_port_ethdev_reader_rx, p, n_pkts, rx_pkt_cnt);
+	if(likely(rx_pkt_cnt == 0))
+		p->stats.zero_polls ++;
+	else
+		tracepoint(librte_port_ethdev, rte_port_ethdev_reader_rx, p, n_pkts, rx_pkt_cnt, p->stats.zero_polls);
 
 	return rx_pkt_cnt;
 }
@@ -201,7 +204,7 @@ rte_port_ethdev_writer_tx(void *port, struct rte_mbuf *pkt)
 	p->tx_buf[p->tx_buf_count++] = pkt;
 	RTE_PORT_ETHDEV_WRITER_STATS_PKTS_IN_ADD(p, 1);
 
-	tracepoint(librte_port_ethdev, rte_port_ethdev_writer_tx, port, p->tx_buf_count);
+	tracepoint(librte_port_ethdev, rte_port_ethdev_writer_tx, port);
 
 	if (p->tx_buf_count >= p->tx_burst_sz)
 		send_burst(p);
@@ -233,12 +236,15 @@ rte_port_ethdev_writer_tx_bulk(void *port,
 			n_pkts);
 
 		RTE_PORT_ETHDEV_WRITER_STATS_PKTS_DROP_ADD(p, n_pkts - n_pkts_ok);
+		tracepoint(librte_port_ethdev, rte_port_ethdev_writer_tx_bulk, port, n_pkts, n_pkts_ok);
+
 		for ( ; n_pkts_ok < n_pkts; n_pkts_ok++) {
 			struct rte_mbuf *pkt = pkts[n_pkts_ok];
 
 			rte_pktmbuf_free(pkt);
 		}
 	} else {
+		uint64_t pkts_mask_tmp = pkts_mask;
 		for ( ; pkts_mask; ) {
 			uint32_t pkt_index = __builtin_ctzll(pkts_mask);
 			uint64_t pkt_mask = 1LLU << pkt_index;
@@ -248,6 +254,9 @@ rte_port_ethdev_writer_tx_bulk(void *port,
 			RTE_PORT_ETHDEV_WRITER_STATS_PKTS_IN_ADD(p, 1);
 			pkts_mask &= ~pkt_mask;
 		}
+
+		tracepoint(librte_port_ethdev, rte_port_ethdev_writer_tx_bulk, port,
+			__builtin_popcountll(pkts_mask_tmp), tx_buf_count - p->tx_buf_count);
 
 		p->tx_buf_count = tx_buf_count;
 		if (tx_buf_count >= p->tx_burst_sz)

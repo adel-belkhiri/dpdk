@@ -65,7 +65,7 @@ rte_eal_mp_remote_launch(int (*f)(void *), void *arg,
 		lcore_config[master].ret = f(arg);
 		lcore_config[master].state = FINISHED;
 
-		tracepoint(librte_eal, thread_lcore_waiting, master, lcore_config[master].ret, FINISHED);
+		tracepoint(librte_eal, thread_lcore_stopped, master, /*status*/ FINISHED, lcore_config[master].ret);
 	}
 
 	return 0;

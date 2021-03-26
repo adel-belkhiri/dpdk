@@ -7,10 +7,65 @@
 	"settings": {
 		"files.exclude": {
 			"**.vscode": true,
-			"**/.*": true
+			"**/.classpath": true,
+			"**/.project": true,
+			"**/.settings": true,
+			"**/.factorypath": true
 		},
 		"files.associations": {
-			"typeinfo": "cpp"
-		}
+			"typeinfo": "cpp",
+			"test_table_ports.h": "c",
+			"ethdev_private.h": "c",
+			"rte_ethdev.h": "c",
+			"array": "cpp",
+			"chrono": "cpp",
+			"string_view": "cpp",
+			"functional": "cpp",
+			"ratio": "cpp",
+			"tuple": "cpp",
+			"type_traits": "cpp",
+			"utility": "cpp",
+			"istream": "cpp",
+			"ostream": "cpp",
+			"vector": "cpp",
+			"algorithm": "cpp",
+			"rte_event_ring_trace.h": "c",
+			"thread": "c",
+			"rte_eventdev_trace.h": "c",
+			"string": "c",
+			"initializer_list": "c",
+			"rte_table_stub_trace.h": "c",
+			"*.tcc": "c",
+			"rte_ring_trace.h": "c",
+			"rte_ring.h": "c",
+			"rte_port_ring_trace.h": "c",
+			"rte_port_ring.h": "c",
+			"rte_string_fns.h": "c",
+			"rte_ethdev_trace.h": "c",
+			"atomic": "cpp",
+			"rte_port_crypto_trace.h": "c",
+			"rte_port_sym_crypto_trace.h": "c",
+			"tracepoint-event.h": "c"
+		},
+		"colorTabs.config": [
+
+			{
+				"regex": ".*/web/.*"
+			},
+			{
+				"regex": ".*/mobile/.*"
+			},
+			{
+				"regex": ".*/librte_pipeline/.*"
+			},
+			{
+				"regex": ".*/librte_port/.*"
+			},
+			{
+				"regex": ".*/librte_table/.*"
+			}
+		],
+		"C_Cpp.default.intelliSenseMode": "linux-clang-x64",
+		"C_Cpp.intelliSenseEngineFallback": "Enabled"
 	}
 }

@@ -12,6 +12,8 @@
 #include <rte_event_ring.h>
 #include <rte_service_component.h>
 
+#include <rte_event_sw_trace.h>
+
 #include "sw_evdev.h"
 #include "iq_chunk.h"
 
@@ -204,6 +206,8 @@ sw_port_setup(struct rte_eventdev *dev, uint8_t port_id,
 
 	rte_smp_wmb();
 	p->initialized = 1;
+
+	tracepoint(sw_eventdev, sw_port_setup, sw, port_id, conf, p->rx_worker_ring, p->cq_worker_ring);
 	return 0;
 }
 
@@ -824,6 +828,7 @@ sw_start(struct rte_eventdev *dev)
 	rte_smp_wmb();
 	sw->started = 1;
 
+	tracepoint(sw_eventdev, sw_start, sw);
 	return 0;
 }
 
@@ -877,6 +882,7 @@ sw_close(struct rte_eventdev *dev)
 	sw->sched_no_cq_enqueues = 0;
 	sw->sched_cq_qid_called = 0;
 
+	tracepoint(sw_eventdev, sw_close, sw);
 	return 0;
 }
 
@@ -1058,6 +1064,9 @@ sw_probe(struct rte_vdev_device *vdev)
 	dev->data->service_inited = 1;
 	dev->data->service_id = sw->service_id;
 
+	tracepoint(sw_eventdev, sw_probe, socket_id, name, sw, sw->data->dev_id, credit_quanta,
+		sched_quanta, sw->service_id);
+
 	return 0;
 }
 
@@ -1071,6 +1080,7 @@ sw_remove(struct rte_vdev_device *vdev)
 		return -EINVAL;
 
 	SW_LOG_INFO("Closing eventdev sw device %s\n", name);
+	tracepoint(sw_eventdev, sw_remove, name);
 
 	return rte_event_pmd_vdev_uninit(name);
 }

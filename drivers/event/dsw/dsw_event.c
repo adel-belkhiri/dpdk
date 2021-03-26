@@ -15,6 +15,7 @@
 #include <rte_cycles.h>
 #include <rte_memcpy.h>
 #include <rte_random.h>
+#include <rte_event_dsw_trace.h>
 
 static bool
 dsw_port_acquire_credits(struct dsw_evdev *dsw, struct dsw_port *port,
@@ -29,6 +30,9 @@ dsw_port_acquire_credits(struct dsw_evdev *dsw, struct dsw_port *port,
 
 	if (likely(missing_credits <= 0)) {
 		port->inflight_credits -= credits;
+
+		tracepoint(dsw_eventdev, dsw_port_acquire_credits, dsw, port->id, credits,
+			port->inflight_credits, rte_atomic32_read(&dsw->credits_on_loan));
 		return true;
 	}
 
@@ -58,6 +62,8 @@ dsw_port_acquire_credits(struct dsw_evdev *dsw, struct dsw_port *port,
 	port->inflight_credits += acquired_credits;
 	port->inflight_credits -= credits;
 
+	tracepoint(dsw_eventdev, dsw_port_acquire_credits, dsw, port->id, credits,
+		port->inflight_credits, new_total_on_loan);
 	return true;
 }
 
@@ -160,6 +166,8 @@ dsw_port_load_update(struct dsw_port *port, uint64_t now)
 		(DSW_OLD_LOAD_WEIGHT+1);
 
 	rte_atomic16_set(&port->load, new_load);
+
+	tracepoint(dsw_eventdev, dsw_port_load_update, port->dsw, port->id, new_load);
 }
 
 static void
@@ -501,6 +509,8 @@ dsw_port_buffer_paused(struct dsw_port *port,
 	port->paused_events_len++;
 }
 
+static uint16_t dsw_flow_id_hash(uint32_t flow_id);
+
 static void
 dsw_port_buffer_non_paused(struct dsw_evdev *dsw, struct dsw_port *source_port,
 			   uint8_t dest_port_id, const struct rte_event *event)
@@ -514,6 +524,9 @@ dsw_port_buffer_non_paused(struct dsw_evdev *dsw, struct dsw_port *source_port,
 	buffer[*buffer_len] = *event;
 
 	(*buffer_len)++;
+
+	tracepoint(dsw_eventdev, dsw_port_buffer_non_paused, dsw, source_port->id,
+	dest_port_id, event->queue_id, dsw_flow_id_hash(event->flow_id));
 }
 
 #define DSW_FLOW_ID_BITS (24)
@@ -594,6 +607,9 @@ dsw_port_flush_paused_events(struct dsw_evdev *dsw,
 
 	dest_port_id = dsw_schedule(dsw, queue_id, paused_flow_hash);
 
+	tracepoint(dsw_eventdev, dsw_port_flush_paused_events, dsw, source_port->id,
+	dest_port_id, queue_id, paused_flow_hash);
+
 	for (i = 0; i < paused_events_len; i++) {
 		struct rte_event *event = &paused_events[i];
 		uint16_t flow_hash;
@@ -634,6 +650,8 @@ dsw_port_end_migration(struct dsw_evdev *dsw, struct dsw_port *port)
 		dsw_port_remove_paused_flow(port, queue_id, flow_hash);
 		dsw_port_flush_paused_events(dsw, port, queue_id, flow_hash);
 	}
+
+	tracepoint(dsw_eventdev, dsw_port_end_migration, dsw, port->id, queue_id, flow_hash);
 
 	DSW_LOG_DP_PORT(DEBUG, port->id, "Migration completed for queue_id "
 			"%d flow_hash %d.\n", queue_id, flow_hash);
@@ -753,6 +771,10 @@ dsw_port_consider_migration(struct dsw_evdev *dsw,
 			source_port->id, source_port->migration_target_port_id);
 
 	/* We have a winner. */
+
+	tracepoint(dsw_eventdev, dsw_port_start_migration, dsw, source_port->id,
+		source_port->migration_target_port_id, source_port->migration_target_qf.queue_id,
+		source_port->migration_target_qf.flow_hash);
 
 	source_port->migration_state = DSW_MIGRATION_STATE_PAUSING;
 	source_port->migration_start = rte_get_timer_cycles();
@@ -892,6 +914,9 @@ dsw_port_move_migrating_flow(struct dsw_evdev *dsw,
 	dsw_port_forward_migrated_flow(source_port, dest_port->in_ring,
 				       queue_id, flow_hash);
 
+	tracepoint(dsw_eventdev, dsw_port_move_migrating_flow, dsw, source_port->id, dest_port_id,
+		queue_id, flow_hash);
+
 	/* Flow table update and migration destination port's enqueues
 	 * must be seen before the control message.
 	 */
@@ -909,6 +934,8 @@ dsw_port_handle_confirm(struct dsw_evdev *dsw, struct dsw_port *port)
 	port->cfm_cnt++;
 
 	if (port->cfm_cnt == (dsw->num_ports-1)) {
+		tracepoint(dsw_eventdev, collect_all_confirm_msgs, dsw, port->id);
+
 		switch (port->migration_state) {
 		case DSW_MIGRATION_STATE_PAUSING:
 			DSW_LOG_DP_PORT(DEBUG, port->id, "Going into forwarding "
@@ -1101,6 +1128,9 @@ dsw_event_enqueue_burst_generic(void *port, const struct rte_event events[],
 	DSW_LOG_DP_PORT(DEBUG, source_port->id, "%d non-release events "
 			"accepted.\n", num_non_release);
 
+    tracepoint(dsw_eventdev, dsw_event_enqueue_burst, dsw, source_port->id,
+		events_len, num_new, num_release, num_non_release);
+
 	return num_non_release;
 }
 
@@ -1228,6 +1258,9 @@ dsw_event_dequeue_burst(void *port, struct rte_event *events, uint16_t num,
 	if (dequeued > 0) {
 		DSW_LOG_DP_PORT(DEBUG, source_port->id, "Dequeued %d events.\n",
 				dequeued);
+
+		tracepoint(dsw_eventdev, dsw_event_dequeue_burst, dsw, source_port->id,
+			num, dequeued);
 
 		dsw_port_return_credits(dsw, source_port, dequeued);
 

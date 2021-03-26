@@ -57,8 +57,9 @@ rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned slave_id)
 	if (n < 0)
 		rte_panic("cannot write on configuration pipe\n");
 
-	/* Fire the event before waiting for the ack to garantee events ordering (with thread_lcore_running) */
-	tracepoint(librte_eal, thread_remote_launch, f, arg, slave_id, /*rc == success*/ 0);
+	/* Fire the event before waiting for the ack to garantee events ordering
+	(with thread_lcore_running) */
+	tracepoint(librte_eal, thread_remote_launch, f, arg, slave_id);
 
 	/* wait ack */
 	do {
@@ -70,8 +71,7 @@ rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned slave_id)
 
 	return 0;
 
-finish:	
-	tracepoint(librte_eal, thread_remote_launch, f, arg, slave_id, rc);
+finish:
 	return rc;
 }
 
@@ -134,7 +134,7 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 	RTE_LOG(DEBUG, EAL, "lcore %u is ready (tid=%zx;cpuset=[%s%s])\n",
 		lcore_id, (uintptr_t)thread_id, cpuset, ret == 0 ? "" : "...");
 
-	tracepoint(librte_eal, thread_lcore_ready, lcore_id, /*slave lcore*/ 0, cpuset);				
+	tracepoint(librte_eal, thread_lcore_ready, lcore_id, /*slave lcore*/ 0, cpuset);
 
 	/* read on our pipe to get commands */
 	while (1) {
@@ -160,7 +160,7 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 		if (lcore_config[lcore_id].f == NULL)
 			rte_panic("NULL function pointer\n");
 
-		tracepoint(librte_eal, thread_lcore_running, lcore_id, lcore_config[lcore_id].f, lcore_config[lcore_id].arg);			
+		tracepoint(librte_eal, thread_lcore_running, lcore_id, lcore_config[lcore_id].f, lcore_config[lcore_id].arg);
 
 		/* call the function and store the return value */
 		fct_arg = lcore_config[lcore_id].arg;
@@ -175,8 +175,8 @@ eal_thread_loop(__attribute__((unused)) void *arg)
 			lcore_config[lcore_id].state = WAIT;
 		else
 			lcore_config[lcore_id].state = FINISHED;
-		
-		tracepoint(librte_eal, thread_lcore_waiting, lcore_id, ret, lcore_config[lcore_id].state);
+
+		tracepoint(librte_eal, thread_lcore_stopped, lcore_id, lcore_config[lcore_id].state, ret);
 	}
 
 	/* never reached */

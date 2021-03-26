@@ -9,6 +9,7 @@
 #include <rte_memzone.h>
 #include <rte_rwlock.h>
 #include <rte_eal_memconfig.h>
+#include <rte_event_ring_trace.h>
 #include "rte_event_ring.h"
 
 TAILQ_HEAD(rte_event_ring_list, rte_tailq_entry);
@@ -97,6 +98,9 @@ rte_event_ring_create(const char *name, unsigned int count, int socket_id,
 		r->r.memzone = mz;
 
 		TAILQ_INSERT_TAIL(ring_list, te, next);
+
+		tracepoint(librte_eventdev_ring, rte_event_ring_create, r, name, count,
+		socket_id, flags, &(r->r));
 	} else {
 		r = NULL;
 		RTE_LOG(ERR, RING, "Cannot reserve memory\n");
@@ -180,5 +184,6 @@ rte_event_ring_free(struct rte_event_ring *r)
 
 	rte_mcfg_tailq_write_unlock();
 
+	tracepoint(librte_eventdev_ring, rte_event_ring_free, r);
 	rte_free(te);
 }

@@ -7,7 +7,7 @@
 # DPDK instance, use 'make'
 
 build = cc.has_header('sys/epoll.h')
-deps += ['pipeline', 'bus_pci']
+deps += ['pipeline']
 allow_experimental_apis = true
 sources = files(
 	'action.c',

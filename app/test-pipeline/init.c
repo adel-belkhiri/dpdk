@@ -70,12 +70,12 @@ struct app_params app = {
 static struct rte_eth_conf port_conf = {
 	.rxmode = {
 		.split_hdr_size = 0,
-		.offloads = DEV_RX_OFFLOAD_CHECKSUM,
+		.offloads = DEV_RX_OFFLOAD_VLAN_STRIP,
 	},
 	.rx_adv_conf = {
 		.rss_conf = {
 			.rss_key = NULL,
-			.rss_hf = ETH_RSS_IP,
+			.rss_hf = 0,
 		},
 	},
 	.txmode = {
@@ -174,8 +174,8 @@ app_ports_check_link(void)
 			all_ports_up = 0;
 	}
 
-	if (all_ports_up == 0)
-		rte_panic("Some NIC ports are DOWN\n");
+	//if (all_ports_up == 0)
+	//	rte_panic("Some NIC ports are DOWN\n");
 }
 
 static void

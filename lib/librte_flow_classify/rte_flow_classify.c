@@ -324,7 +324,7 @@ rte_flow_classifier_free(struct rte_flow_classifier *cls)
 	}
 
 	tracepoint(librte_flow_classify, rte_flow_classifier_free, cls->name);
-	
+
 	/* Free flow classifier memory */
 	rte_free(cls);
 
@@ -624,7 +624,8 @@ flow_classifier_lookup(struct rte_flow_classifier *cls,
 		cls->nb_pkts = 0;
 
 	tracepoint(librte_flow_classify, flow_classifier_lookup, cls->name, table->h_table,
-		nb_pkts, __builtin_popcountll(lookup_hit_mask), lookup_hit_mask, (void **)cls->entries);
+		nb_pkts /*pkts in*/, __builtin_popcountll(lookup_hit_mask) /*pkts out*/, lookup_hit_mask,
+		(void **)cls->entries, ret);
 
 	return ret;
 }

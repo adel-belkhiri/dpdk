@@ -1,0 +1,48 @@
+; SPDX-License-Identifier: BSD-3-Clause
+; Copyright(c) 2010-2018 Intel Corporation
+
+; Equal Cost Multi-Path (ECMP) Routing
+;
+; Input packet: Ethernet/IPv4
+;
+; Packet buffer layout:
+; #   Field Name       Offset (Bytes)   Size (Bytes)
+; 0   Mbuf             0                128
+; 1   Headroom         128              128
+; 2   Ethernet header  256              14
+; 3   IPv4 header      270              20
+
+mempool MEMPOOL0 buffer 2504 pool 32K cache 256 cpu 0
+
+link LINK0 dev net_vhost0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK1 dev net_vhost1 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+swq  SWQ0  size  262144  cpu 0
+
+
+pipeline PIPELINE0 period 10 offset_port_id 0 cpu 0
+pipeline PIPELINE1 period 10 offset_port_id 0 cpu 0
+
+pipeline PIPELINE0 port in bsz 32 link LINK0 rxq 0
+pipeline PIPELINE0 port in bsz 32 link LINK1 rxq 0
+pipeline PIPELINE0 port out bsz 32 swq SWQ0
+
+pipeline PIPELINE1 port in bsz 32 swq SWQ0
+pipeline PIPELINE1 port out bsz 32 link LINK0 txq 0
+pipeline PIPELINE1 port out bsz 32 link LINK1 txq 0
+;pipeline PIPELINE1 port out bsz 32 sink
+
+pipeline PIPELINE0 table match stub
+pipeline PIPELINE1 table match stub
+
+
+pipeline PIPELINE0 port in 0 table 0
+pipeline PIPELINE0 port in 1 table 0
+pipeline PIPELINE1 port in 0 table 0
+
+thread 1 pipeline PIPELINE0 enable
+thread 2 pipeline PIPELINE1 enable
+
+pipeline PIPELINE0 table 0 rule add match default action fwd port 0
+pipeline PIPELINE1 table 0 rule add match default action fwd port 1
+
+

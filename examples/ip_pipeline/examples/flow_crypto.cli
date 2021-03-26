@@ -20,17 +20,18 @@
 ; 4   Packet           256              1536
 ; 5   Crypto Operation 1792             160
 
-mempool MEMPOOL0 buffer 2304 pool 32K cache 256 cpu 1
+mempool MEMPOOL0 buffer 2304 pool 32K cache 256 cpu 0
 
-link LINK0 dev 81:00.0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+; link LINK0 dev 81:00.0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
+link LINK0 dev net_vhost0 rxq 1 128 MEMPOOL0 txq 1 512 promiscuous on
 
 #Cryptodev
-cryptodev CRYPTO0 dev crypto_aesni_gcm0 queue 1 1024 max_sessions 512
+cryptodev CRYPTO0 dev crypto_aesni_gcm0 queue 1 128 max_sessions 2
 
 table action profile AP0 ipv4 offset 270 fwd sym_crypto dev CRYPTO0 offset 1792
 table action profile AP1 ipv4 offset 270 fwd
 
-pipeline PIPELINE0 period 10 offset_port_id 0 cpu 1
+pipeline PIPELINE0 period 10 offset_port_id 0 cpu 0
 
 pipeline PIPELINE0 port in bsz 32 link LINK0 rxq 0
 pipeline PIPELINE0 port in bsz 32 cryptodev CRYPTO0 rxq 0

@@ -32,9 +32,11 @@
 #include <rte_ethdev.h>
 #include <rte_cryptodev.h>
 #include <rte_cryptodev_pmd.h>
+#include <rte_eventdev_trace.h>
 
 #include "rte_eventdev.h"
 #include "rte_eventdev_pmd.h"
+
 
 static struct rte_eventdev rte_event_devices[RTE_EVENT_MAX_DEVS];
 
@@ -524,6 +526,8 @@ rte_event_dev_configure(uint8_t dev_id,
 	}
 
 	dev->data->event_dev_cap = info.event_dev_cap;
+
+	tracepoint(librte_eventdev, rte_event_dev_configure, dev, dev_id, dev_conf);
 	return diag;
 }
 
@@ -599,6 +603,7 @@ rte_event_queue_setup(uint8_t dev_id, uint8_t queue_id,
 {
 	struct rte_eventdev *dev;
 	struct rte_event_queue_conf def_conf;
+	int ret;
 
 	RTE_EVENTDEV_VALID_DEVID_OR_ERR_RET(dev_id, -EINVAL);
 	dev = &rte_eventdevs[dev_id];
@@ -650,7 +655,10 @@ rte_event_queue_setup(uint8_t dev_id, uint8_t queue_id,
 	}
 
 	dev->data->queues_cfg[queue_id] = *queue_conf;
-	return (*dev->dev_ops->queue_setup)(dev, queue_id, queue_conf);
+	ret = (*dev->dev_ops->queue_setup)(dev, queue_id, queue_conf);
+
+	tracepoint(librte_eventdev, rte_event_queue_setup, dev_id, queue_id, queue_conf, ret);
+	return ret;
 }
 
 static inline int
@@ -761,6 +769,8 @@ rte_event_port_setup(uint8_t dev_id, uint8_t port_id,
 	dev->data->ports_cfg[port_id] = *port_conf;
 
 	diag = (*dev->dev_ops->port_setup)(dev, port_id, port_conf);
+
+	tracepoint(librte_eventdev, rte_event_port_setup, dev_id, port_id, port_conf, diag);
 
 	/* Unlink all the queues from this port(default state after setup) */
 	if (!diag)
@@ -936,6 +946,7 @@ rte_event_port_link(uint8_t dev_id, uint8_t port_id,
 	for (i = 0; i < diag; i++)
 		links_map[queues[i]] = (uint8_t)priorities[i];
 
+	tracepoint(librte_eventdev, rte_event_port_link, dev_id, port_id, queues, priorities, nb_links, diag);
 	return diag;
 }
 
@@ -1001,6 +1012,7 @@ rte_event_port_unlink(uint8_t dev_id, uint8_t port_id,
 	for (i = 0; i < diag; i++)
 		links_map[queues[i]] = EVENT_QUEUE_SERVICE_PRIORITY_INVALID;
 
+	tracepoint(librte_eventdev, rte_event_port_unlink, dev_id, port_id, queues, nb_unlinks, diag);
 	return diag;
 }
 
@@ -1213,6 +1225,8 @@ rte_event_dev_start(uint8_t dev_id)
 	}
 
 	diag = (*dev->dev_ops->dev_start)(dev);
+	tracepoint(librte_eventdev, rte_event_dev_start, dev_id, diag);
+
 	if (diag == 0)
 		dev->data->dev_started = 1;
 	else
@@ -1257,12 +1271,15 @@ rte_event_dev_stop(uint8_t dev_id)
 
 	dev->data->dev_started = 0;
 	(*dev->dev_ops->dev_stop)(dev);
+
+	tracepoint(librte_eventdev, rte_event_dev_stop, dev_id);
 }
 
 int
 rte_event_dev_close(uint8_t dev_id)
 {
 	struct rte_eventdev *dev;
+	int ret = -EBUSY;
 
 	RTE_EVENTDEV_VALID_DEVID_OR_ERR_RET(dev_id, -EINVAL);
 	dev = &rte_eventdevs[dev_id];
@@ -1272,10 +1289,14 @@ rte_event_dev_close(uint8_t dev_id)
 	if (dev->data->dev_started == 1) {
 		RTE_EDEV_LOG_ERR("Device %u must be stopped before closing",
 				dev_id);
-		return -EBUSY;
+		return ret;
 	}
 
-	return (*dev->dev_ops->dev_close)(dev);
+
+	ret = (*dev->dev_ops->dev_close)(dev);
+	tracepoint(librte_eventdev, rte_event_dev_close, dev_id, ret);
+
+	return ret;
 }
 
 static inline int
@@ -1374,6 +1395,8 @@ rte_event_pmd_allocate(const char *name, int socket_id)
 		eventdev_globals.nb_devs++;
 	}
 
+	tracepoint(librte_eventdev, rte_event_pmd_allocate, socket_id, name, dev_id, eventdev);
+
 	return eventdev;
 }
 
@@ -1389,6 +1412,8 @@ rte_event_pmd_release(struct rte_eventdev *eventdev)
 
 	eventdev->attached = RTE_EVENTDEV_DETACHED;
 	eventdev_globals.nb_devs--;
+
+	tracepoint(librte_eventdev, rte_event_pmd_release, eventdev);
 
 	if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
 		rte_free(eventdev->data->dev_private);

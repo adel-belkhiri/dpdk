@@ -8,6 +8,7 @@
 #include <rte_eventdev_pmd.h>
 #include <rte_eventdev_pmd_vdev.h>
 #include <rte_random.h>
+#include <rte_event_dsw_trace.h>
 
 #include "dsw_evdev.h"
 
@@ -68,6 +69,8 @@ dsw_port_setup(struct rte_eventdev *dev, uint8_t port_id,
 
 	dev->data->ports[port_id] = port;
 
+	tracepoint(dsw_eventdev, dsw_port_setup, dsw, port_id, conf, port->in_ring,
+		port->ctl_in_ring, port->load_update_interval, port->migration_interval);
 	return 0;
 }
 
@@ -119,6 +122,7 @@ dsw_queue_setup(struct rte_eventdev *dev, uint8_t queue_id,
 
 	queue->num_serving_ports = 0;
 
+	tracepoint(dsw_eventdev, dsw_queue_setup, dsw, queue_id, queue->schedule_type, conf);
 	return 0;
 }
 
@@ -241,6 +245,7 @@ dsw_configure(const struct rte_eventdev *dev)
 
 	dsw->max_inflight = RTE_MAX(conf->nb_events_limit, min_max_in_flight);
 
+	tracepoint(dsw_eventdev, dsw_configure, dsw, dsw->max_inflight, conf);
 	return 0;
 }
 
@@ -280,6 +285,7 @@ dsw_start(struct rte_eventdev *dev)
 		dsw->ports[i].busy_start = now;
 	}
 
+	tracepoint(dsw_eventdev, dsw_start, dsw, now);
 	return 0;
 }
 
@@ -355,6 +361,7 @@ dsw_stop(struct rte_eventdev *dev)
 	flush_arg = dev->data->dev_stop_flush_arg;
 
 	dsw_drain(dev_id, dsw, flush, flush_arg);
+	tracepoint(dsw_eventdev, dsw_stop, dsw);
 }
 
 static int
@@ -365,6 +372,7 @@ dsw_close(struct rte_eventdev *dev)
 	dsw->num_ports = 0;
 	dsw->num_queues = 0;
 
+	tracepoint(dsw_eventdev, dsw_close, dsw);
 	return 0;
 }
 
@@ -415,6 +423,7 @@ dsw_probe(struct rte_vdev_device *vdev)
 	dsw = dev->data->dev_private;
 	dsw->data = dev->data;
 
+    tracepoint(dsw_eventdev, dsw_probe, name, dsw, dev->data->dev_id);
 	return 0;
 }
 
@@ -427,6 +436,7 @@ dsw_remove(struct rte_vdev_device *vdev)
 	if (name == NULL)
 		return -EINVAL;
 
+	tracepoint(dsw_eventdev, dsw_remove, name);
 	return rte_event_pmd_vdev_uninit(name);
 }
 

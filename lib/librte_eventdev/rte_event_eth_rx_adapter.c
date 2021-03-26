@@ -17,6 +17,7 @@
 #include <rte_service_component.h>
 #include <rte_thash.h>
 #include <rte_interrupts.h>
+#include <rte_eventdev_trace.h>
 
 #include "rte_eventdev.h"
 #include "rte_eventdev_pmd.h"
@@ -1922,6 +1923,7 @@ rxa_ctrl(uint8_t id, int start)
 		rte_spinlock_unlock(&rx_adapter->rx_lock);
 	}
 
+    tracepoint(librte_eventdev, rxa_ctrl, id, start);
 	return 0;
 }
 
@@ -1998,6 +2000,8 @@ rte_event_eth_rx_adapter_create_ext(uint8_t id, uint8_t dev_id,
 	event_eth_rx_adapter[id] = rx_adapter;
 	if (conf_cb == rxa_default_conf_cb)
 		rx_adapter->default_cb_arg = 1;
+
+	tracepoint(librte_eventdev, rte_event_eth_rx_adapter_create, id, dev_id, conf_cb);
 	return 0;
 }
 
@@ -2040,6 +2044,8 @@ rte_event_eth_rx_adapter_free(uint8_t id)
 				rx_adapter->nb_queues);
 		return -EBUSY;
 	}
+
+	tracepoint(librte_eventdev, rte_event_eth_rx_adapter_free, id);
 
 	if (rx_adapter->default_cb_arg)
 		rte_free(rx_adapter->conf_arg);
@@ -2141,6 +2147,9 @@ rte_event_eth_rx_adapter_queue_add(uint8_t id,
 		}
 		rte_spinlock_unlock(&rx_adapter->rx_lock);
 	}
+
+	tracepoint(librte_eventdev, rte_event_eth_rx_adapter_queue_add, id,
+	eth_dev_id, rx_queue_id, queue_conf);
 
 	if (ret)
 		return ret;
@@ -2261,6 +2270,9 @@ unlock_ret:
 
 		rte_service_component_runstate_set(rx_adapter->service_id,
 				rxa_sw_adapter_queue_count(rx_adapter));
+
+		tracepoint(librte_eventdev, rte_event_eth_rx_adapter_queue_del, id,
+		eth_dev_id, rx_queue_id);
 	}
 
 	return ret;

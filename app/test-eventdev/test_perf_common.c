@@ -331,20 +331,20 @@ perf_launch_lcores(struct evt_test *test, struct evt_options *opt,
 			}
 		}
 
-		if (new_cycles - dead_lock_cycles > dead_lock_sample &&
-		    (opt->prod_type == EVT_PROD_TYPE_SYNT ||
-		     opt->prod_type == EVT_PROD_TYPE_EVENT_TIMER_ADPTR)) {
-			remaining = t->outstand_pkts - processed_pkts(t);
-			if (dead_lock_remaining == remaining) {
-				rte_event_dev_dump(opt->dev_id, stdout);
-				evt_err("No schedules for seconds, deadlock");
-				t->done = true;
-				rte_smp_wmb();
-				break;
-			}
-			dead_lock_remaining = remaining;
-			dead_lock_cycles = new_cycles;
-		}
+		//if (new_cycles - dead_lock_cycles > dead_lock_sample &&
+		    //(opt->prod_type == EVT_PROD_TYPE_SYNT ||
+		    // opt->prod_type == EVT_PROD_TYPE_EVENT_TIMER_ADPTR)) {
+			//remaining = t->outstand_pkts - processed_pkts(t);
+			//if (dead_lock_remaining == remaining) {
+			//	rte_event_dev_dump(opt->dev_id, stdout);
+			//	evt_err("No schedules for seconds, deadlock");
+			//	t->done = true;
+			//	rte_smp_wmb();
+			//	break;
+			//}
+			//dead_lock_remaining = remaining;
+			//dead_lock_cycles = new_cycles;
+		//}
 	}
 	printf("\n");
 	return 0;

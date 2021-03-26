@@ -36,6 +36,7 @@
 #include <rte_errno.h>
 #include <rte_spinlock.h>
 #include <rte_string_fns.h>
+#include <rte_cryptodev_trace.h>
 
 #include "rte_crypto.h"
 #include "rte_cryptodev.h"
@@ -887,6 +888,9 @@ rte_cryptodev_configure(uint8_t dev_id, struct rte_cryptodev_config *config)
 		return diag;
 	}
 
+    tracepoint(librte_cryptodev, rte_cryptodev_configure, dev, dev_id, dev->data->name,
+		config->nb_queue_pairs);
+
 	return (*dev->dev_ops->dev_configure)(dev, config);
 }
 
@@ -920,6 +924,8 @@ rte_cryptodev_start(uint8_t dev_id)
 	else
 		return diag;
 
+    tracepoint(librte_cryptodev, rte_cryptodev_start, dev_id);
+
 	return 0;
 }
 
@@ -943,8 +949,11 @@ rte_cryptodev_stop(uint8_t dev_id)
 		return;
 	}
 
+    tracepoint(librte_cryptodev, rte_cryptodev_stop, dev_id);
+
 	(*dev->dev_ops->dev_stop)(dev);
 	dev->data->dev_started = 0;
+
 }
 
 int
@@ -983,6 +992,8 @@ rte_cryptodev_close(uint8_t dev_id)
 
 	if (retval < 0)
 		return retval;
+
+    tracepoint(librte_cryptodev, rte_cryptodev_close, dev_id);
 
 	return 0;
 }

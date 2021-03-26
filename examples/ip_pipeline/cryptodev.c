@@ -100,6 +100,28 @@ cryptodev_create(const char *name, struct cryptodev_params *params)
 		return NULL;
 
 	queue_conf.nb_descriptors = params->queue_size;
+
+	snprintf(mp_name, NAME_SIZE, "%s_mp%u", name, dev_id);
+	queue_conf.mp_session = rte_cryptodev_sym_session_pool_create(
+		mp_name,
+		params->session_pool_size,
+		0,
+		cache_size,
+		0,
+		socket_id);
+
+	queue_conf.mp_session_private = rte_mempool_create(
+			"Hello",
+			params->session_pool_size,
+			rte_cryptodev_sym_get_private_session_size(dev_id),
+			cache_size,
+			0,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			socket_id,
+			0);
 	for (i = 0; i < params->n_queues; i++) {
 		status = rte_cryptodev_queue_pair_setup(dev_id, i,
 				&queue_conf, socket_id);
@@ -120,30 +142,31 @@ cryptodev_create(const char *name, struct cryptodev_params *params)
 	cryptodev->dev_id = dev_id;
 	cryptodev->n_queues = params->n_queues;
 
-	snprintf(mp_name, NAME_SIZE, "%s_mp%u", name, dev_id);
-	cryptodev->mp_create = rte_cryptodev_sym_session_pool_create(
-			mp_name,
-			params->session_pool_size,
-			0,
-			cache_size,
-			0,
-			socket_id);
+	// cryptodev->mp_create = rte_cryptodev_sym_session_pool_create(
+	// 		mp_name,
+	// 		params->session_pool_size,
+	// 		0,
+	// 		cache_size,
+	// 		0,
+	// 		socket_id);
+	cryptodev->mp_create = queue_conf.mp_session;
 	if (!cryptodev->mp_create)
 		goto error_exit;
 
 	snprintf(mp_name, NAME_SIZE, "%s_mp_priv%u", name, dev_id);
-	cryptodev->mp_init = rte_mempool_create(
-			NULL,
-			params->session_pool_size,
-			rte_cryptodev_sym_get_private_session_size(dev_id),
-			cache_size,
-			0,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			socket_id,
-			0);
+	// cryptodev->mp_init = rte_mempool_create(
+	// 		NULL,
+	// 		params->session_pool_size,
+	// 		rte_cryptodev_sym_get_private_session_size(dev_id),
+	// 		cache_size,
+	// 		0,
+	// 		NULL,
+	// 		NULL,
+	// 		NULL,
+	// 		NULL,
+	// 		socket_id,
+	// 		0);
+	cryptodev->mp_init = queue_conf.mp_session_private;
 	if (!cryptodev->mp_init)
 		goto error_exit;
 

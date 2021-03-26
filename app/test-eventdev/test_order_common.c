@@ -278,17 +278,17 @@ order_launch_lcores(struct evt_test *test, struct evt_options *opt,
 		}
 
 		if (new_cycles - cycles > rte_get_timer_hz() * 1) {
-			printf(CLGRN"\r%"PRId64""CLNRM, remaining);
-			fflush(stdout);
-			if (old_remaining == remaining) {
-				rte_event_dev_dump(opt->dev_id, stdout);
-				evt_err("No schedules for seconds, deadlock");
-				t->err = true;
-				rte_smp_wmb();
-				break;
-			}
-			old_remaining = remaining;
-			cycles = new_cycles;
+			//printf(CLGRN"\r%"PRId64""CLNRM, remaining);
+			//fflush(stdout);
+			//if (old_remaining == remaining) {
+			//	rte_event_dev_dump(opt->dev_id, stdout);
+			//	evt_err("No schedules for seconds, deadlock");
+			//	t->err = true;
+			//	rte_smp_wmb();
+			//	break;
+			//}
+			//old_remaining = remaining;
+			//cycles = new_cycles;
 		}
 	}
 	printf("\r");

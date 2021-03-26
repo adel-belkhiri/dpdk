@@ -56,6 +56,8 @@ Cannot be changed. */
 struct rte_port_in_stats {
 	uint64_t n_pkts_in;
 	uint64_t n_pkts_drop;
+	/*Added by Adel*/
+	uint64_t zero_polls;
 };
 
 /**

@@ -4,6 +4,7 @@
 #include <rte_spinlock.h>
 #include <rte_service_component.h>
 #include <rte_ethdev.h>
+#include <rte_eventdev_trace.h>
 
 #include "rte_eventdev_pmd.h"
 #include "rte_event_eth_tx_adapter.h"
@@ -944,6 +945,8 @@ rte_event_eth_tx_adapter_create(uint8_t id, uint8_t dev_id,
 	}
 
 	txa_dev_id_array[id] = dev_id;
+
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_create, id, dev_id);
 	return 0;
 }
 
@@ -985,6 +988,8 @@ rte_event_eth_tx_adapter_create_ext(uint8_t id, uint8_t dev_id,
 	}
 
 	txa_dev_id_array[id] = dev_id;
+
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_create, id, dev_id);
 	return 0;
 }
 
@@ -1011,6 +1016,8 @@ rte_event_eth_tx_adapter_free(uint8_t id)
 	if (ret == 0)
 		ret = txa_service_adapter_free(id);
 	txa_dev_id_array[id] = TXA_INVALID_DEV_ID;
+
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_free, id);
 
 	return ret;
 }
@@ -1043,6 +1050,9 @@ rte_event_eth_tx_adapter_queue_add(uint8_t id,
 	else
 		ret = txa_service_queue_add(id, txa_evdev(id), eth_dev, queue);
 
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_queue_add, id, eth_dev_id, queue,
+		/*txa_service_id_to_data(id)->service_id,*/ ret);
+
 	return ret;
 }
 
@@ -1073,6 +1083,7 @@ rte_event_eth_tx_adapter_queue_del(uint8_t id,
 	else
 		ret = txa_service_queue_del(id, eth_dev, queue);
 
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_queue_del, id, eth_dev_id, queue, ret);
 	return ret;
 }
 
@@ -1094,6 +1105,8 @@ rte_event_eth_tx_adapter_start(uint8_t id)
 	ret = txa_dev_start(id) ? txa_dev_start(id)(id, txa_evdev(id)) : 0;
 	if (ret == 0)
 		ret = txa_service_start(id);
+
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_start, id);
 	return ret;
 }
 
@@ -1154,5 +1167,7 @@ rte_event_eth_tx_adapter_stop(uint8_t id)
 	ret = txa_dev_stop(id) ? txa_dev_stop(id)(id,  txa_evdev(id)) : 0;
 	if (ret == 0)
 		ret = txa_service_stop(id);
+
+	tracepoint(librte_eventdev, rte_event_eth_tx_adapter_stop, id);
 	return ret;
 }

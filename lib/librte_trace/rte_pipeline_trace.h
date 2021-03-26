@@ -184,7 +184,7 @@ TRACEPOINT_EVENT(
  * (if default_entry is defined).
  *
  * @p f_hit_action: Pointer to the function to execute if a packet matches with a rule
- * @p f_miss_action: Pointer to the function to execute in case a packet didnt match with any
+ * @p f_miss_action: Pointer to the function to execute in case a packet didn't match with any
  * of table's rules.
  * @p h_table: pointer to the low-level rte_table_{acl, lpm, hash, etc.}
  */
@@ -226,7 +226,7 @@ TRACEPOINT_EVENT(
 /**
  * Add a default entry to a pipeline table.
  *
- * @p next_port_table_id: ID of the port/table to send the packet to if default action is equal
+ * @p next_port_table_id: ID of the port/table to send the packet to if the default action is equal
  * to RTE_PIPELINE_ACTION_PORT/RTE_PIPELINE_ACTION_TABLE.
  *
  * Values of actions are described by rte_pipeline_action enumeration :
@@ -302,6 +302,10 @@ TRACEPOINT_EVENT(
 
 /**
  * Add a rule to a pipeline table
+ *
+ * @p p: pipeline's ID.
+ * @p table_id: Table's ID.
+ * @p action: Action to execute when a packet matches with this rule.
  */
 TRACEPOINT_EVENT(
     librte_pipeline,

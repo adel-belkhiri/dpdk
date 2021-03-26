@@ -19,6 +19,7 @@
 #include <rte_memory.h>
 #include <rte_malloc.h>
 #include <rte_ring.h>
+#include <rte_event_ring_trace.h>
 #include "rte_eventdev.h"
 
 #define RTE_TAILQ_EVENT_RING_NAME "RTE_EVENT_RING"
@@ -103,6 +104,10 @@ rte_event_ring_enqueue_burst(struct rte_event_ring *r,
 end:
 	if (free_space != NULL)
 		*free_space = free_entries - n;
+
+	if(n > 0)
+		tracepoint(librte_eventdev_ring, rte_event_ring_enqueue_burst, r, n, (free_entries - n));
+
 	return n;
 }
 
@@ -145,6 +150,10 @@ rte_event_ring_dequeue_burst(struct rte_event_ring *r,
 end:
 	if (available != NULL)
 		*available = entries - n;
+
+	if(n > 0)
+		tracepoint(librte_eventdev_ring, rte_event_ring_dequeue_burst, r, n, (entries - n));
+
 	return n;
 }
 

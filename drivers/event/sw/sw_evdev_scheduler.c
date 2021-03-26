@@ -5,6 +5,8 @@
 #include <rte_ring.h>
 #include <rte_hash_crc.h>
 #include <rte_event_ring.h>
+#include <rte_event_sw_trace.h>
+
 #include "sw_evdev.h"
 #include "iq_chunk.h"
 
@@ -103,6 +105,9 @@ sw_schedule_atomic_to_cq(struct sw_evdev *sw, struct sw_qid * const qid,
 					&sw->cq_ring_space[cq]);
 			p->cq_buf_count = 0;
 		}
+
+		tracepoint(sw_eventdev, schedule_atomic_to_cq, sw, qid_id, iq_num,
+				cq, flow_id);
 	}
 	iq_put_back(sw, &qid->iq[iq_num], blocked_qes, nb_blocked);
 
@@ -174,6 +179,9 @@ sw_schedule_parallel_to_cq(struct sw_evdev *sw, struct sw_qid * const qid,
 		p->inflights++;
 		p->stats.tx_pkts++;
 		p->hist_head++;
+
+		tracepoint(sw_eventdev, schedule_parallel_to_cq, sw, qid_id, iq_num,
+				cq, p->hist_list[head].fid);
 	}
 exit:
 	qid->cq_next_tx = cq_idx;
@@ -204,6 +212,8 @@ sw_schedule_dir_to_cq(struct sw_evdev *sw, struct sw_qid * const qid,
 
 	/* Subtract credits from cached value */
 	sw->cq_ring_space[cq_id] -= ret;
+
+    tracepoint(sw_eventdev, schedule_dir_to_cq, sw, qid->id, iq_num, cq_id, ret);
 
 	return ret;
 }
@@ -407,6 +417,7 @@ __pull_port_lb(struct sw_evdev *sw, uint32_t port_id, int allow_reorder)
 			port->inflights -= eop;
 			port->hist_tail += eop;
 		}
+
 		if (flags & QE_FLAG_VALID) {
 			port->stats.rx_pkts++;
 
@@ -442,6 +453,8 @@ __pull_port_lb(struct sw_evdev *sw, uint32_t port_id, int allow_reorder)
 		}
 
 end_qe:
+		tracepoint(sw_eventdev, pull_port_lb, sw, port_id, qid->id,
+			iq_num, allow_reorder && needs_reorder, flags & QE_FLAG_VALID);
 		port->pp_buf_start++;
 		port->pp_buf_count--;
 	} /* while (avail_qes) */
@@ -493,6 +506,7 @@ sw_schedule_pull_port_dir(struct sw_evdev *sw, uint32_t port_id)
 		qid->stats.rx_pkts++;
 		pkts_iter++;
 
+    	tracepoint(sw_eventdev, sw_schedule_pull_port_dir, sw, port_id, qid->id, iq_num);
 end_qe:
 		port->pp_buf_start++;
 		port->pp_buf_count--;

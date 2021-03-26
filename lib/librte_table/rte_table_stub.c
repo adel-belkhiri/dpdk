@@ -6,6 +6,7 @@
 
 #include <rte_mbuf.h>
 #include <rte_malloc.h>
+#include <rte_table_stub_trace.h>
 
 #include "rte_table_stub.h"
 
@@ -45,6 +46,7 @@ rte_table_stub_create(__rte_unused void *params,
 		return NULL;
 	}
 
+	tracepoint(librte_table_stub, rte_table_stub_create, stub);
 	return stub;
 }
 
@@ -63,6 +65,7 @@ rte_table_stub_lookup(
 	*lookup_hit_mask = 0;
 	RTE_TABLE_LPM_STATS_PKTS_LOOKUP_MISS(stub, n_pkts_in);
 
+	tracepoint(librte_table_stub, rte_table_stub_lookup, stub, n_pkts_in);
 	return 0;
 }
 

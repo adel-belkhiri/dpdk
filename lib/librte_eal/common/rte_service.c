@@ -262,7 +262,7 @@ rte_service_component_register(const struct rte_service_spec *spec,
 		*id_ptr = free_slot;
 
 	tracepoint(librte_eal, service_component_register, free_slot,
-		spec->name, spec->callback, spec->callback_userdata);	
+		spec->name, spec->callback, spec->callback_userdata);
 
 	return 0;
 }
@@ -285,7 +285,7 @@ rte_service_component_unregister(uint32_t id)
 
 	memset(&rte_services[id], 0, sizeof(struct rte_service_spec_impl));
 
-	tracepoint(librte_eal, service_component_unregister, id, s->spec.name);
+	tracepoint(librte_eal, service_component_unregister, id);
 
 	return 0;
 }
@@ -316,6 +316,7 @@ rte_service_runstate_set(uint32_t id, uint32_t runstate)
 	else
 		s->app_runstate = RUNSTATE_STOPPED;
 
+    tracepoint(librte_eal, service_runstate_set, id, runstate);
 	rte_smp_wmb();
 	return 0;
 }
@@ -433,6 +434,7 @@ int32_t rte_service_run_iter_on_app_lcore(uint32_t id,
 		return -EBUSY;
 	}
 
+	tracepoint(librte_eal, service_run_iter_on_app_lcore, id, rte_lcore_id());
 	int ret = service_run(id, rte_lcore_id(), cs, UINT64_MAX);
 
 	if (serialize_mt_unsafe)
@@ -605,9 +607,9 @@ rte_service_map_lcore_set(uint32_t id, uint32_t lcore, uint32_t enabled)
 	struct rte_service_spec_impl *s;
 	SERVICE_VALID_GET_OR_ERR_RET(id, s, -EINVAL);
 	uint32_t on = enabled > 0;
-	
+
 	tracepoint(librte_eal, service_map_lcore, id, lcore, on);
-	
+
 	return service_update(&s->spec, lcore, &on, 0);
 }
 
@@ -715,7 +717,7 @@ rte_service_lcore_start(uint32_t lcore)
 	 */
 	lcore_states[lcore].runstate = RUNSTATE_RUNNING;
 
-	tracepoint(librte_eal, service_lcore_ready, lcore);
+	tracepoint(librte_eal, service_lcore_start, lcore);
 
 	int ret = rte_eal_remote_launch(rte_service_runner_func, 0, lcore);
 	/* returns -EBUSY if the core is already launched, 0 on success */
@@ -748,9 +750,8 @@ rte_service_lcore_stop(uint32_t lcore)
 	}
 
 	lcore_states[lcore].runstate = RUNSTATE_STOPPED;
-
 	tracepoint(librte_eal, service_lcore_stop, lcore);
-	
+
 	return 0;
 }
 

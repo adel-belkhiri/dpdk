@@ -14,8 +14,8 @@
 #define	ARRAY_DIM(a)	(sizeof (a) / sizeof ((a)[0]))
 
 
-/** 
- * Create a new ACL context. 
+/**
+ * Create a new ACL context.
  */
 TRACEPOINT_EVENT(
     librte_acl,
@@ -26,14 +26,14 @@ TRACEPOINT_EVENT(
     ),
     TP_FIELDS(
         ctf_integer_hex(void*, ctx, ctx)
-        ctf_integer(uint32_t, socket_id, param->socket_id)        
+        ctf_integer(uint32_t, socket_id, param->socket_id)
         ctf_string(name, param->name)
         ctf_integer(uint32_t, max_rules, param->max_rule_num)
-        ctf_integer(uint32_t, rule_sz, param->rule_size)        
+        ctf_integer(uint32_t, rule_sz, param->rule_size)
     )
 )
 
-/** 
+/**
  * Free all memory used by ACL context.
  */
 TRACEPOINT_EVENT(
@@ -42,12 +42,12 @@ TRACEPOINT_EVENT(
     TP_ARGS(
         const void *, name
     ),
-    TP_FIELDS(      
-        ctf_string(name, name)     
+    TP_FIELDS(
+        ctf_string(name, name)
     )
 )
 
-/** 
+/**
  * Add an ACL rule to the context.
  */
 TRACEPOINT_EVENT(
@@ -59,7 +59,7 @@ TRACEPOINT_EVENT(
         struct rte_acl_field*, field,
         size_t, num_fields
     ),
-    TP_FIELDS(      
+    TP_FIELDS(
         ctf_integer_hex(void*, ctx, ctx)
         ctf_integer(uint32_t, category_mask, data->category_mask)
         ctf_integer(int32_t, priority, data->priority)
@@ -79,11 +79,11 @@ TRACEPOINT_EVENT(
             for(int i = 0; i < num_fields; i++)
                 tmp_array[i] = (uint32_t) field[i].mask_range.u32;
             tmp_array;
-        }), size_t, num_fields)        
+        }), size_t, num_fields)
     )
 )
 
-/** 
+/**
  * Bulk adding ACL rules to the context
  */
 #define trace_acl_rules(ctx, num, rules)        \
@@ -92,9 +92,9 @@ TRACEPOINT_EVENT(
 			((uintptr_t)rules + j * ctx->rule_sz);          \
         size_t num_fields =  (ctx->rule_sz - sizeof(rv->data)) / sizeof(rv->field[0]);      \
         tracepoint(librte_acl, rte_acl_add_rule, ctx, &rv->data, rv->field, num_fields);    \
-    } 
+    }
 
-/** 
+/**
  * Generate a RT data structures from the rules
  */
 TRACEPOINT_EVENT(
@@ -109,10 +109,10 @@ TRACEPOINT_EVENT(
         uint32_t, num_tries,
         size_t, mem_sz
     ),
-    TP_FIELDS(      
+    TP_FIELDS(
         ctf_integer_hex(void*, ctx, ctx)
         ctf_integer(uint32_t, num_categories, cfg->num_categories)
-        ctf_integer(size_t, mem_max_sz, cfg->max_size)        
+        ctf_integer(size_t, mem_max_sz, cfg->max_size)
         ctf_integer(uint32_t, node_max, node_max)
         ctf_integer(uint32_t, num_nodes, num_nodes)
         ctf_integer(uint32_t, num_tries, num_tries)
@@ -120,7 +120,7 @@ TRACEPOINT_EVENT(
     )
 )
 
-/** 
+/**
  * Set the classify method for the context
  */
 TRACEPOINT_EVENT(
@@ -130,9 +130,9 @@ TRACEPOINT_EVENT(
         const void *, ctx,
         uint8_t, alg
     ),
-    TP_FIELDS(      
+    TP_FIELDS(
         ctf_integer_hex(void*, ctx, ctx)
-        ctf_integer(uint8_t, alg, alg)        
+        ctf_integer(uint8_t, alg, alg)
     )
 )
 #endif /* _RTE_ACL_TRACE_H */

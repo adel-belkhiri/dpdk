@@ -32,7 +32,7 @@
 static volatile bool force_quit;
 
 static uint16_t port_id;
-static uint16_t nr_queues = 5;
+static uint16_t nr_queues = 1;
 static uint8_t selected_queue = 1;
 struct rte_mempool *mbuf_pool;
 struct rte_flow *flow;

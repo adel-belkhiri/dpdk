@@ -45,6 +45,7 @@ worker_generic(void *arg)
 		ev.op = RTE_EVENT_OP_FORWARD;
 		ev.sched_type = cdata.queue_type;
 
+		//ev.mbuf->port = 1;
 		work();
 
 		while (rte_event_enqueue_burst(dev_id, port_id, &ev, 1) != 1)
@@ -93,9 +94,11 @@ worker_generic_burst(void *arg)
 		for (i = 0; i < nb_rx; i++) {
 
 			/* The first worker stage does classification */
-			if (events[i].queue_id == cdata.qid[0])
+			if (events[i].queue_id == cdata.qid[0]) {
 				events[i].flow_id = events[i].mbuf->hash.rss
 							% cdata.num_fids;
+				events[i].mbuf->port = 1;
+			}
 
 			events[i].queue_id = cdata.next_qid[events[i].queue_id];
 			events[i].op = RTE_EVENT_OP_FORWARD;
