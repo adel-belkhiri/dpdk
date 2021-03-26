@@ -11,15 +11,15 @@
 
 /**
  * Create a hash cuckoo table
- * 
- *      @p tbl: Pointer to table data structure
- *      @p name: Name of the table
- *      @p n_keys: Capacity of the table in terms of number of rules.
- *      @p key_size: Size of the key
- *      @p entry_size: 
- *      @p f_hash: Pointer to the hash function
- *      @p seed: Seed provided to the hash function to compute the key
- *      @p key_offset:
+ *
+ *  @p tbl: Pointer to table data structure
+ *  @p name: Name of the table
+ *  @p n_keys: Capacity of the table in terms of number of rules.
+ *  @p key_size: Size of the key
+ *  @p entry_size:
+ *  @p f_hash: Pointer to the hash function
+ *  @p seed: Seed provided to the hash function to compute the key
+ *  @p key_offset:
  */
 TRACEPOINT_EVENT(
     librte_table_hash,
@@ -42,13 +42,13 @@ TRACEPOINT_EVENT(
         ctf_integer(uint32_t, entry_size, entry_size)
         ctf_integer_hex(void*, f_hash, f_hash)
         ctf_integer(uint32_t, seed, seed)
-        ctf_integer(uint8_t, key_offset, key_offset) 
+        ctf_integer(uint8_t, key_offset, key_offset)
     )
 )
 
 /**
  * Delete a hash cuckoo table
- * 
+ *
  * @p tbl: table pointer
  */
 TRACEPOINT_EVENT(
@@ -58,17 +58,17 @@ TRACEPOINT_EVENT(
         const void*, tbl
     ),
     TP_FIELDS(
-        ctf_integer_hex(void*, tbl, tbl)    
+        ctf_integer_hex(void*, tbl, tbl)
     )
 )
 
 /**
  * Add an entry to a hash cuckoo table
- * @p entry_ptr: Pointer to the address memory where the rule is saved. 
- * It is used as an ID of the hash rule.
- * @p key: Pointer to the data structure containing the key. The hash function is applied to this key
- * to generate a "hash value" that can be used during rules lookups. 
- * @p key_found: Indicates whether the same key exists already in the table or not.
+ *  @p entry_ptr: Pointer to the address memory where the rule is saved.
+ *      It is used as an ID of the hash rule.
+ *  @p key: Pointer to the data structure containing the key. The hash function is applied to this key
+ *      to generate a "hash value" that can be used during rules lookups.
+ *  @p key_found: Indicates whether the same key exists already in the table or not.
  */
 TRACEPOINT_EVENT(
     librte_table_hash,
@@ -108,10 +108,10 @@ TRACEPOINT_EVENT(
 
 /**
  * Hash lookup
- * 
- *      @p tbl: pointer to the table
- *      @p n_pkts_in: number of packets concerned with the lookup
- *      @p n_pkts_out: number of matching packets
+ *
+ *  @p tbl: pointer to the table
+ *  @p n_pkts_in: number of packets concerned with the lookup
+ *  @p n_pkts_out: number of matching packets
  */
 TRACEPOINT_EVENT(
     librte_table_hash,
@@ -130,11 +130,11 @@ TRACEPOINT_EVENT(
             void* array[MAX_BURST_PKT_NUM];
             for(int i = 0; i < n_pkts_in; i++) {
                 uint64_t pkt_mask = 1LLU << i;
-                if(pkt_mask & pkts_out_mask) 
+                if(pkt_mask & pkts_out_mask)
                     array[i] = entries[i];
                 else
                     array[i] = NULL;
-            }    
+            }
             array;
         }), size_t, n_pkts_in)
         ctf_integer(uint32_t, n_pkts_in, n_pkts_in)

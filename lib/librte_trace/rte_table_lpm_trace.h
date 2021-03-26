@@ -13,8 +13,9 @@
 
 #define MAX_BURST_PKT_NUM          64
 
-/** 
+/**
  * Create an LPM table
+ *
  * @p tbl: pointer to the LPM table
  * @p name: name of the table
  * @p entry_unique_size: byte size of the key identifying the LPM rule.
@@ -44,7 +45,7 @@ TRACEPOINT_EVENT(
 )
 
 /*
- *  Delete the LPM table 
+ *  Delete the LPM table
  */
 TRACEPOINT_EVENT(
     librte_table_lpm,
@@ -57,9 +58,10 @@ TRACEPOINT_EVENT(
     )
 )
 
- /** 
+ /**
   * Add an entry to the LPM table
-  * @p entry_ptr: pointer to the next_hop entry. 
+  *
+  * @p entry_ptr: pointer to the next_hop entry.
   * PS : Many rules can share the same next_hop entry.
   */
 TRACEPOINT_EVENT(
@@ -69,7 +71,7 @@ TRACEPOINT_EVENT(
         const void*, tbl,
         const struct rte_table_lpm_key*, key,
         int, key_found,
-        uint32_t, nht_pos,        
+        uint32_t, nht_pos,
         const void*, entry_ptr
     ),
     TP_FIELDS(
@@ -99,20 +101,20 @@ TRACEPOINT_EVENT(
         ctf_integer(uint32_t, ip, key->ip)
         ctf_integer(uint8_t, depth, key->depth)
         ctf_integer(void*, entry_ptr, entry_ptr)
-        ctf_integer(uint32_t, nht_pos, nht_pos)   
+        ctf_integer(uint32_t, nht_pos, nht_pos)
     )
 )
 
 /**
  * LPM Lookup.
- * 
+ *
  * @p entries_ptr: pointers to next_hop entries as provided by the low-level LPM object.
- * These pointers cannot be used as an ID of an LPM rule since many lpm rules may point 
+ * These pointers cannot be used as an ID of an LPM rule since many lpm rules may point
  * to the same next_hop data structure.
  * @p n_pkts_in: number of packets concerned with the lookup
  * @p n_pkts_out: number of packets to which a corresponding match was found
  * @p pkts_out_mask: mask specifying which packets match with a rule.
- */ 
+ */
 TRACEPOINT_EVENT(
     librte_table_lpm,
     rte_table_lpm_lookup,
@@ -130,11 +132,11 @@ TRACEPOINT_EVENT(
             void* array[MAX_BURST_PKT_NUM];
             for(int i = 0; i < n_pkts_in; i++) {
                 uint64_t pkt_mask = 1LLU << i;
-                if(pkt_mask & pkts_out_mask) 
+                if(pkt_mask & pkts_out_mask)
                     array[i] = entries [i];
                 else
                     array[i] = NULL;
-            }    
+            }
             array;
         }), size_t, n_pkts_in)
         ctf_integer(uint32_t, n_pkts_in, n_pkts_in)
