@@ -180,9 +180,13 @@ sw_event_dequeue_burst(void *port, struct rte_event *ev, uint16_t num,
 	p->total_polls++;
 
 	tracepoint(sw_eventdev, sw_event_dequeue_burst, p->sw, p->id, rte_atomic32_read(&p->sw->inflights),
-		p->inflight_credits, p->outstanding_releases, num, ndeq);
+		p->inflight_credits, p->outstanding_releases, num, ndeq, p->zero_polls, p->total_polls);
 
 end:
+	if((p->zero_polls % 2000 == 0))
+		tracepoint(sw_eventdev, sw_event_dequeue_burst, p->sw, p->id, rte_atomic32_read(&p->sw->inflights),
+			p->inflight_credits, p->outstanding_releases, num, ndeq, p->zero_polls, p->total_polls);
+
 	return ndeq;
 }
 

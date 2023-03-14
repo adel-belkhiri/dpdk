@@ -9,6 +9,8 @@
 
 #include <lttng/tracepoint.h>
 
+#define MAX_BURST_PKT_NUM          64
+
 /**
  * Create a hash cuckoo table
  *

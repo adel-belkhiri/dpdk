@@ -16,6 +16,7 @@ extern "C" {
 #include "rte_common.h"
 #include "rte_pause.h"
 #include "rte_cycles.h"
+#include "rte_spinlock_trace.h"
 
 #define RTE_RTM_MAX_RETRIES (20)
 #define RTE_XABORT_LOCK_BUSY (0xff)
@@ -25,6 +26,10 @@ static inline void
 rte_spinlock_lock(rte_spinlock_t *sl)
 {
 	int lock_val = 1;
+	unsigned int lcore = rte_lcore_id();
+
+	tracepoint(librte_spinlock, lock_req, sl, lcore, LTTNG_UST_CALLER_IP());
+
 	asm volatile (
 			"1:\n"
 			"xchg %[locked], %[lv]\n"
@@ -39,22 +44,28 @@ rte_spinlock_lock(rte_spinlock_t *sl)
 			: [locked] "=m" (sl->locked), [lv] "=q" (lock_val)
 			: "[lv]" (lock_val)
 			: "memory");
+
+	tracepoint(librte_spinlock, lock_acq, sl, lcore, LTTNG_UST_CALLER_IP());
 }
 
 static inline void
 rte_spinlock_unlock (rte_spinlock_t *sl)
 {
 	int unlock_val = 0;
+
 	asm volatile (
 			"xchg %[locked], %[ulv]\n"
 			: [locked] "=m" (sl->locked), [ulv] "=q" (unlock_val)
 			: "[ulv]" (unlock_val)
 			: "memory");
+
+	tracepoint(librte_spinlock, lock_release, sl, rte_lcore_id());
 }
 
 static inline int
 rte_spinlock_trylock (rte_spinlock_t *sl)
 {
+	int ret;
 	int lockval = 1;
 
 	asm volatile (
@@ -63,7 +74,12 @@ rte_spinlock_trylock (rte_spinlock_t *sl)
 			: "[lockval]" (lockval)
 			: "memory");
 
-	return lockval == 0;
+	ret = lockval == 0;
+
+	/* Generate an event, only when the lock is taken */
+	if(ret == 1)
+		tracepoint(librte_spinlock, lock_acq, sl, rte_lcore_id(), LTTNG_UST_CALLER_IP());
+	return ret;
 }
 #endif
 

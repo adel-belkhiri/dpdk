@@ -1328,7 +1328,9 @@ rte_eth_dev_configure(uint16_t port_id, uint16_t nb_rx_q, uint16_t nb_tx_q,
 		goto rollback;
 	}
 
-	tracepoint(librte_ethdev, rte_eth_dev_configure, dev, port_id);
+	tracepoint(librte_ethdev, rte_eth_dev_configure, port_id, dev->data->name, nb_rx_q,
+			nb_tx_q, dev_conf->rxmode.offloads, dev_conf->txmode.offloads, dev->data->dev_conf.rxmode.max_rx_pkt_len );
+
 	return 0;
 
 rollback:

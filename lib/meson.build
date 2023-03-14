@@ -120,7 +120,7 @@ foreach l:libraries
 
 			# then use pre-build objects to build shared lib
 			sources = []
-			objs += static_lib.extract_all_objects(recursive: false)
+			objs += static_lib.extract_all_objects(recursive: true)
 			version_map = '@0@/@1@/rte_@2@_version.map'.format(
 					meson.current_source_dir(), dir_name, name)
 			implib = dir_name + '.dll.a'

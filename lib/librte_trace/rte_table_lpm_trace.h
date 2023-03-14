@@ -4,8 +4,8 @@
 #undef TRACEPOINT_INCLUDE
 #define TRACEPOINT_INCLUDE "./rte_table_lpm_trace.h"
 
-#if !defined(_RTE_TABLE_LPM_TRACE_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
-#define _RTE_TABLE_LPM_TRACE_H
+#if !defined(RTE_TABLE_LPM_TRACE_H_) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define RTE_TABLE_LPM_TRACE_H_
 
 #include <lttng/tracepoint.h>
 #include <rte_table_lpm.h>
@@ -144,5 +144,5 @@ TRACEPOINT_EVENT(
     )
 )
 
-#endif /* _RTE_TABLE_LPM_TRACE_H */
+#endif /* RTE_TABLE_LPM_TRACE_H_ */
 #include <lttng/tracepoint-event.h>

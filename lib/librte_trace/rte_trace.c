@@ -2,11 +2,13 @@
 #define TRACEPOINT_DEFINE
 
 #include "rte_eal_trace.h"
-//#include "rte_ring_trace.h"
+#include "rte_ring_trace.h"
+
+#include "rte_spinlock_trace.h"
+#include "rte_kni_trace.h"
 
 #include "rte_lpm_trace.h"
 #include "rte_hash_trace.h"
-#include "rte_acl_trace.h"
 
 #include "rte_table_lpm_trace.h"
 #include "rte_table_hash_trace.h"
@@ -22,6 +24,9 @@
 #include "rte_port_ethdev_trace.h"
 #include "rte_port_source_sink_trace.h"
 #include "rte_port_sym_crypto_trace.h"
+
+
+#include "rte_acl_trace.h"
 
 #include "rte_ethdev_trace.h"
 #include "rte_vhost_trace.h"

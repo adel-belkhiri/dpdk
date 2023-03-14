@@ -8,7 +8,6 @@
 #define _RTE_ETHDEV_TRACE_H
 
 #include <lttng/tracepoint.h>
-#include <rte_ethdev.h>
 
 /**
  * The functions exported by the application Ethernet API to setup a device
@@ -46,18 +45,22 @@ TRACEPOINT_EVENT(
     librte_ethdev,
     rte_eth_dev_configure,
     TP_ARGS(
-        const struct rte_eth_dev*, dev,
-        uint16_t, port_id
+        uint16_t, port_id,
+	const char*, name,
+	uint16_t, nb_rx_q,
+	uint16_t, nb_tx_q,
+	uint64_t, rx_offloads,
+	uint64_t, tx_offloads,
+	uint32_t, max_rx_pkt_len
     ),
     TP_FIELDS(
-        ctf_integer_hex(void*, dev, dev)
         ctf_integer(uint16_t, port_id, port_id)
-        ctf_string(name, dev->data->name)
-        ctf_integer(uint16_t, nb_rx_q, dev->data->nb_rx_queues)
-        ctf_integer(uint16_t, nb_tx_q, dev->data->nb_tx_queues)
-        ctf_integer(uint64_t, rx_offloads, dev->data->dev_conf.rxmode.offloads)
-        ctf_integer(uint64_t, tx_offloads, dev->data->dev_conf.txmode.offloads)
-        ctf_integer(uint32_t, max_rx_pkt_len, dev->data->dev_conf.rxmode.max_rx_pkt_len)
+        ctf_string(name, name)
+        ctf_integer(uint16_t, nb_rx_q, nb_rx_q)
+        ctf_integer(uint16_t, nb_tx_q, nb_tx_q)
+        ctf_integer(uint64_t, rx_offloads, rx_offloads)
+        ctf_integer(uint64_t, tx_offloads, tx_offloads)
+        ctf_integer(uint32_t, max_rx_pkt_len, max_rx_pkt_len)
     )
 )
 
@@ -242,6 +245,36 @@ TRACEPOINT_EVENT(
     TP_FIELDS(
         ctf_integer(uint16_t, port_id, port_id)
         ctf_integer(uint16_t, queue_id, queue_id)
+    )
+)
+
+TRACEPOINT_EVENT(
+    librte_ethdev,
+    rte_eth_rx_burst,
+    TP_ARGS(
+        uint16_t, port_id,
+        uint16_t, queue_id,
+        uint16_t, nb_rx
+    ),
+    TP_FIELDS(
+        ctf_integer(int, port_id, port_id)
+        ctf_integer(uint16_t, queue_id, queue_id)
+        ctf_integer(uint16_t, nb_rx, nb_rx)
+    )
+)
+
+TRACEPOINT_EVENT(
+    librte_ethdev,
+    rte_eth_tx_burst,
+    TP_ARGS(
+        uint16_t, port_id,
+        uint16_t, queue_id,
+        uint16_t, nb_tx
+    ),
+    TP_FIELDS(
+        ctf_integer(int, port_id, port_id)
+        ctf_integer(uint16_t, queue_id, queue_id)
+        ctf_integer(uint16_t, nb_tx, nb_tx)
     )
 )
 

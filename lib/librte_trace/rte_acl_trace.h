@@ -2,7 +2,7 @@
 #define TRACEPOINT_PROVIDER librte_acl
 
 #undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./rte_acl_trace.h"
+#define TRACEPOINT_INCLUDE  "librte_trace/rte_acl_trace.h"
 
 #if !defined(_RTE_ACL_TRACE_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define _RTE_ACL_TRACE_H

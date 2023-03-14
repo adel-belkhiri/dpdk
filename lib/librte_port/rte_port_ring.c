@@ -90,10 +90,8 @@ rte_port_ring_reader_rx(void *port, struct rte_mbuf **pkts, uint32_t n_pkts)
 
 	/* function executed in polling mode. We limit then the events generation
 	to significant occurances */
-	if(likely(nb_rx <= 0))
-		p->stats.zero_polls++;
-	else
-		tracepoint(librte_port_ring, rte_port_ring_reader_rx, p, n_pkts, nb_rx, p->stats.zero_polls);
+	if(unlikely(nb_rx > 0))
+		tracepoint(librte_port_ring, rte_port_ring_reader_rx, p, n_pkts, nb_rx);
 
 	return nb_rx;
 }
@@ -307,16 +305,19 @@ rte_port_ring_writer_tx_bulk_internal(void *port,
 		}
 
 		RTE_PORT_RING_WRITER_STATS_PKTS_IN_ADD(p, n_pkts);
-		if (is_multi)
+		if (is_multi) {
 			n_pkts_ok = rte_ring_mp_enqueue_burst(p->ring,
 					(void **)pkts, n_pkts, NULL);
-		else
+
+			tracepoint(librte_port_ring, send_burst_mp, port, n_pkts_ok, n_pkts);
+		}
+		else {
 			n_pkts_ok = rte_ring_sp_enqueue_burst(p->ring,
 					(void **)pkts, n_pkts, NULL);
+			tracepoint(librte_port_ring, send_burst, port, n_pkts_ok, n_pkts);
+		}
 
 		RTE_PORT_RING_WRITER_STATS_PKTS_DROP_ADD(p, n_pkts - n_pkts_ok);
-		tracepoint(librte_port_ring, rte_port_ring_writer_tx_bulk, port, n_pkts, n_pkts_ok);
-
 		for ( ; n_pkts_ok < n_pkts; n_pkts_ok++) {
 			struct rte_mbuf *pkt = pkts[n_pkts_ok];
 

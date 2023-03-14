@@ -137,7 +137,9 @@ TRACEPOINT_EVENT(
         uint16_t, p_inflight_credits,
         uint16_t, outstanding_releases,
         uint16_t, num,
-        uint16_t, n_deq
+        uint16_t, n_deq,
+        uint64_t, zero_polls,
+        uint64_t, tot_polls
     ),
     TP_FIELDS(
         ctf_integer_hex(void*, sw, sw)
@@ -147,6 +149,8 @@ TRACEPOINT_EVENT(
         ctf_integer(uint16_t, outstanding_releases, outstanding_releases)
         ctf_integer(uint16_t, num, num)
         ctf_integer(uint16_t, n_deq, n_deq)
+        ctf_integer(uint64_t, zero_polls, zero_polls)
+        ctf_integer(uint64_t, tot_polls, tot_polls)
     )
 )
 

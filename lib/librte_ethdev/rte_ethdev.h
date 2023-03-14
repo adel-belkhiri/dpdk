@@ -160,6 +160,8 @@ extern "C" {
 #include "rte_ether.h"
 #include "rte_dev_info.h"
 
+#include <rte_ethdev_trace.h>
+
 extern int rte_eth_dev_logtype;
 
 #define RTE_ETHDEV_LOG(level, ...) \
@@ -4110,6 +4112,9 @@ rte_eth_rx_burst(uint16_t port_id, uint16_t queue_id,
 	}
 #endif
 
+	if(nb_rx > 0)
+		tracepoint(librte_ethdev, rte_eth_rx_burst, port_id, queue_id, nb_rx);
+
 	return nb_rx;
 }
 
@@ -4373,7 +4378,12 @@ rte_eth_tx_burst(uint16_t port_id, uint16_t queue_id,
 	}
 #endif
 
-	return (*dev->tx_pkt_burst)(dev->data->tx_queues[queue_id], tx_pkts, nb_pkts);
+	uint16_t nb_tx = (*dev->tx_pkt_burst)(dev->data->tx_queues[queue_id], tx_pkts, nb_pkts);
+
+	if(nb_tx > 0)
+		tracepoint(librte_ethdev, rte_eth_tx_burst, port_id, queue_id, nb_tx);
+
+	return nb_tx;
 }
 
 /**

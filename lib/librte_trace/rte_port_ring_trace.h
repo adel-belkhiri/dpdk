@@ -44,14 +44,12 @@ TRACEPOINT_EVENT(
     TP_ARGS(
         const void*, port,
         uint32_t, nb_pkts,
-        uint32_t, rx_pkt_cnt,
-        uint64_t, zero_polls
+        uint32_t, rx_pkt_cnt
     ),
     TP_FIELDS(
         ctf_integer_hex(const void*, port, port)
         ctf_integer(uint32_t, nb_pkts, nb_pkts)
         ctf_integer(uint32_t, rx_pkt_cnt, rx_pkt_cnt)
-        ctf_integer(uint64_t, zero_polls, zero_polls)
     )
 )
 

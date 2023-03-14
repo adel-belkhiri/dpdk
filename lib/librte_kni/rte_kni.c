@@ -23,6 +23,7 @@
 #include <rte_eal_memconfig.h>
 #include <rte_kni_common.h>
 #include "rte_kni_fifo.h"
+#include "rte_kni_trace.h"
 
 #define MAX_MBUF_BURST_NUM            32
 
@@ -314,6 +315,7 @@ rte_kni_alloc(struct rte_mempool *pktmbuf_pool,
 	/* Allocate mbufs and then put them into alloc_q */
 	kni_allocate_mbufs(kni);
 
+	tracepoint(librte_knidev, rte_knidev_create, kni, conf->name);
 	return kni;
 
 ioctl_fail:
@@ -438,6 +440,7 @@ rte_kni_release(struct rte_kni *kni)
 
 	rte_free(te);
 
+	tracepoint(librte_knidev, rte_kni_release, kni);
 	return 0;
 
 unlock:
@@ -567,6 +570,8 @@ rte_kni_tx_burst(struct rte_kni *kni, struct rte_mbuf **mbufs, unsigned int num)
 	/* Get mbufs from free_q and then free them */
 	kni_free_mbufs(kni);
 
+	tracepoint(librte_knidev, rte_kni_tx_burst, kni, num, ret);
+
 	return ret;
 }
 
@@ -578,6 +583,9 @@ rte_kni_rx_burst(struct rte_kni *kni, struct rte_mbuf **mbufs, unsigned int num)
 	/* If buffers removed, allocate mbufs and then put them into alloc_q */
 	if (ret)
 		kni_allocate_mbufs(kni);
+
+	if(ret > 0)
+		tracepoint(librte_knidev, rte_kni_rx_burst, kni, num, ret);
 
 	return ret;
 }

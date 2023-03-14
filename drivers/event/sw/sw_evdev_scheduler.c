@@ -450,11 +450,12 @@ __pull_port_lb(struct sw_evdev *sw, uint32_t port_id, int allow_reorder)
 			qid->iq_pkt_count[iq_num]++;
 			qid->stats.rx_pkts++;
 			pkts_iter++;
+
+			tracepoint(sw_eventdev, pull_port_lb, sw, port_id, qid->id,
+				iq_num, allow_reorder && needs_reorder, flags & QE_FLAG_VALID);
 		}
 
 end_qe:
-		tracepoint(sw_eventdev, pull_port_lb, sw, port_id, qid->id,
-			iq_num, allow_reorder && needs_reorder, flags & QE_FLAG_VALID);
 		port->pp_buf_start++;
 		port->pp_buf_count--;
 	} /* while (avail_qes) */

@@ -310,6 +310,10 @@ DPDK_19.08 {
 	rte_service_may_be_active;
 	rte_srand;
 
+	rte_get_master_lcore;
+	rte_lcore_is_enabled;
+	rte_get_next_lcore;
+
 } DPDK_19.05;
 
 EXPERIMENTAL {
